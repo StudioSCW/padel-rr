@@ -202,6 +202,27 @@ export default function App() {
   const [nameInput, setNameInput] = useState("");
   const [rounds, setRounds] = useState(5);
   const [courts, setCourts] = useState(2);
+  // Control de inputs móviles
+  const [roundsStr, setRoundsStr] = useState(String(rounds));
+  const [courtsStr, setCourtsStr] = useState(String(courts));
+
+  useEffect(() => { setRoundsStr(String(rounds)); }, [rounds]);
+  useEffect(() => { setCourtsStr(String(courts)); }, [courts]);
+
+  function commitRounds() {
+    const n = parseInt(roundsStr.replace(/\D/g, ''), 10);
+    const value = clamp(Number.isFinite(n) ? n : 1, 1, 20);
+    setRounds(value);
+    setRoundsStr(String(value));
+  }
+
+  function commitCourts() {
+    const n = parseInt(courtsStr.replace(/\D/g, ''), 10);
+    const value = clamp(Number.isFinite(n) ? n : 1, 1, 12);
+    setCourts(value);
+    setCourtsStr(String(value));
+  }
+
   const [schedule, setSchedule] = useState([]); // rounds -> matches
   const [history, setHistory] = useState({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
   const [standings, setStandings] = useState([]);
@@ -449,11 +470,31 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              {/* Inputs móviles friendly */}
               <label className="text-sm">Rondas
-                <input type="number" min={1} max={20} value={rounds} onChange={e => setRounds(clamp(parseInt(e.target.value || "0", 10), 1, 20))} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={roundsStr}
+                  onChange={(e) => setRoundsStr(e.target.value)}
+                  onBlur={commitRounds}
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                  placeholder="5"
+                />
               </label>
+
               <label className="text-sm">Canchas
-                <input type="number" min={1} max={12} value={courts} onChange={e => setCourts(clamp(parseInt(e.target.value || "0", 10), 1, 12))} className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={courtsStr}
+                  onChange={(e) => setCourtsStr(e.target.value)}
+                  onBlur={commitCourts}
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                  placeholder="2"
+                />
               </label>
             </div>
 
