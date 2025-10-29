@@ -620,22 +620,14 @@ export default function App() {
                               <TeamLabel team={m.teamA} nameOverride={m.teamNameA} />
                               <TeamLabel team={m.teamB} nameOverride={m.teamNameB} />
                             </div>
-                            <div className="w-28 grid grid-cols-2 gap-2 text-center">
-                              <input
-                                type="number"
-                                min={0}
-                                max={99}
+                            <div className="grid grid-cols-2 gap-3">
+                              <ScoreField
                                 value={m.scoreA}
-                                onChange={e => updateScore(rIdx, mIdx, 'scoreA', e.target.value)}
-                                className="rounded-xl border px-2 py-1"
+                                onCommit={(v) => updateScore(rIdx, mIdx, 'scoreA', v)}
                               />
-                              <input
-                                type="number"
-                                min={0}
-                                max={99}
+                              <ScoreField
                                 value={m.scoreB}
-                                onChange={e => updateScore(rIdx, mIdx, 'scoreB', e.target.value)}
-                                className="rounded-xl border px-2 py-1"
+                                onCommit={(v) => updateScore(rIdx, mIdx, 'scoreB', v)}
                               />
                             </div>
                           </div>
@@ -720,6 +712,50 @@ function TeamLabel({ team, nameOverride }) {
       </div>
       <div className="text-sm">{nameOverride || team.map(p => p.name).join(" + ")}</div>
     </div>
+  );
+}
+
+// --- Campo de marcador con edición libre y confirmación en blur/Enter ---
+function ScoreField({
+  value,
+  onCommit,
+}: {
+  value: number;
+  onCommit: (v: number) => void;
+}) {
+  const [inputStr, setInputStr] = useState<string>(String(value ?? 0));
+
+  // si el valor viene de fuera, sincroniza el texto
+  useEffect(() => {
+    setInputStr(String(value ?? 0));
+  }, [value]);
+
+  // Sólo dígitos o vacío mientras escribes (hasta 2 dígitos)
+  function onChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const s = e.target.value;
+    if (s === "" || /^[0-9]{0,2}$/.test(s)) setInputStr(s);
+  }
+
+  // Confirmar al salir o con Enter
+  function commit() {
+    const n = parseInt(inputStr, 10);
+    const next = Number.isFinite(n) ? Math.max(0, Math.min(99, n)) : (value ?? 0);
+    setInputStr(String(next));
+    if (next !== value) onCommit(next);
+  }
+
+  return (
+    <input
+      type="tel"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={inputStr}
+      onChange={onChange}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      className="w-16 text-center rounded-xl border border-slate-300 px-2 py-1.5"
+      placeholder="0"
+    />
   );
 }
 
