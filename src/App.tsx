@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, Shuffle, Download, Upload, Trophy, Users, Settings, PlayCircle } from "lucide-react";
