@@ -211,6 +211,9 @@ export default function App() {
   });
   const [standings, setStandings] = useState<any[]>([]);
   const [tournamentId, setTournamentId] = useState<string>(() => uid());
+  // === Plan persistente para Equipos fijos (no repetir la misma ronda) ===
+  const [teamPlan, setTeamPlan] = useState<any[] | null>(null); // [[ [A,B], [C,D] ... ], ...]
+  const [teamRoundIdx, setTeamRoundIdx] = useState<number>(0);  // índice de la siguiente ronda
 
   // Load persisted
   useEffect(() => {
@@ -307,16 +310,21 @@ export default function App() {
 
   function generateSchedule() {
     if (mode === MODES.TEAMS) {
-      const rr = generateTeamRoundRobin(teams, rounds);
-      const sched = rr.map((pairings: any[]) =>
-        pairings.slice(0, courts).map(([A, B]) => ({
+      // Genera TODO el round-robin una vez y guárdalo como plan
+      const fullPlan = generateTeamRoundRobin(teams); // todas las rondas
+      setTeamPlan(fullPlan);
+      setTeamRoundIdx(0);
+
+      // Toma las primeras 'rounds' y respeta 'courts'
+      const sched = fullPlan.slice(0, rounds).map((pairings: any[]) =>
+        pairings.slice(0, courts).map(([A, B]: any[]) => ({
           id: uid(),
           teamA: A.players,
           teamB: B.players,
           teamNameA: A.name,
           teamNameB: B.name,
-          teamIdA: A.id, // <-- importante para “Descansan”
-          teamIdB: B.id, // <-- importante para “Descansan”
+          teamIdA: A.id, // necesario para "Descansan"
+          teamIdB: B.id, // necesario para "Descansan"
           scoreA: 0,
           scoreB: 0,
         }))
@@ -430,6 +438,8 @@ export default function App() {
     setTournamentId(uid());
     setSchedule([]);
     setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
+    setTeamPlan(null);
+    setTeamRoundIdx(0);
     // (opcional) reset también jugadores/equipos:
     // setPlayers([]); setTeams([]);
     alert("¡Nuevo torneo creado! ✅");
