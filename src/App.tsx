@@ -513,20 +513,15 @@ export default function App() {
 
             <div className="flex gap-2 text-sm">
               <button
-                onClick={() => setMode(MODES.INDIVIDUAL)}
-                className={`px-3 py-1.5 rounded-xl border ${mode === MODES.INDIVIDUAL
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-900 border-slate-300"
-                  }`}
+                onClick={() => { setSchedule([]); setMode(MODES.INDIVIDUAL); }}
+                className={`px-3 py-1.5 rounded-xl border ${mode === MODES.INDIVIDUAL ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-900 border-slate-300"}`}
               >
                 Individual
               </button>
+
               <button
-                onClick={() => setMode(MODES.TEAMS)}
-                className={`px-3 py-1.5 rounded-xl border ${mode === MODES.TEAMS
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-900 border-slate-300"
-                  }`}
+                onClick={() => { setSchedule([]); setMode(MODES.TEAMS); }}
+                className={`px-3 py-1.5 rounded-xl border ${mode === MODES.TEAMS ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-900 border-slate-300"}`}
               >
                 Equipos fijos
               </button>
@@ -703,7 +698,7 @@ export default function App() {
                   // Para TEAMS: round es array de partidos
                   // Para INDIVIDUAL: round = { matches, resting }
                   // Dentro del map de schedule (por ronda):
-                  const matches = mode === MODES.TEAMS ? round : round.matches;
+                  const matches = mode === MODES.TEAMS ? (round as any[]) : round.matches;
 
                   // IDs de equipos que sí juegan (usamos teamIdA/B que metimos arriba)
                   const playingIds = new Set(
