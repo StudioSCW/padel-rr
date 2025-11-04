@@ -82,32 +82,36 @@ function generateIndividualSchedule(
 ) {
   const teammateCounts = history.teammateCounts || {};
   const matchupCounts = history.matchupCounts || {};
+  const prevRest = history.restCounts || {};
 
-  // si no es múltiplo de 4, que alguien descanse en cada ronda
-  const restEachRound = players.length % 4 !== 0;
   const roundsOut: any[] = [];
-  const newRestCounts = { ...(history.restCounts || {}) };
+  const restCounts: Record<string, number> = { ...prevRest };
 
   for (let r = 0; r < rounds; r++) {
-    const available = shuffleArray(players);
+    // Copia aleatoria de jugadores
+    const pool = shuffleArray(players);
 
-    // sacar 1 jugador a descansar cuando no cuadran múltiplos de 4
+    // ¿Cuántos pueden jugar esta ronda?
+    const usableBlocks = Math.min(Math.floor(pool.length / 4), courts); // bloques de 4
+    const playersInUse = usableBlocks * 4;
+    const restNeeded = Math.max(0, pool.length - playersInUse);
+
+    // Elegir quién descansa: los que MENOS han descansado históricamente
     let resting: any[] = [];
-    if (restEachRound) {
-      available.sort(
-        (a, b) => (newRestCounts[a.id] || 0) - (newRestCounts[b.id] || 0)
-      );
-      const out = available.shift();
-      if (out) {
-        newRestCounts[out.id] = (newRestCounts[out.id] || 0) + 1;
-        resting = [out];
-      }
+    if (restNeeded > 0) {
+      pool.sort((a, b) => (restCounts[a.id] || 0) - (restCounts[b.id] || 0));
+      resting = pool.splice(0, restNeeded);
+      for (const p of resting) restCounts[p.id] = (restCounts[p.id] || 0) + 1;
     }
 
+    const available = pool; // ya sin los que descansan
     const matches: any[] = [];
+
+    // Armar partidos hasta llenar canchas o quedarnos sin grupos de 4
     while (available.length >= 4 && matches.length < courts) {
       let bestQuad: any = null;
       let bestScore = Infinity;
+
       for (let i = 0; i < available.length; i++) {
         for (let j = i + 1; j < available.length; j++) {
           for (let k = j + 1; k < available.length; k++) {
@@ -120,17 +124,16 @@ function generateIndividualSchedule(
               ];
               for (const p of pairings) {
                 const score = pairingPenalty(p as any, teammateCounts, matchupCounts);
-                if (score < bestScore) {
-                  bestScore = score;
-                  bestQuad = { cand, p };
-                }
+                if (score < bestScore) { bestScore = score; bestQuad = { cand, p }; }
               }
             }
           }
         }
       }
+
       if (!bestQuad) break;
 
+      // Saco del pool los 4 elegidos
       for (const pl of bestQuad.cand) {
         const idx = available.indexOf(pl);
         if (idx >= 0) available.splice(idx, 1);
@@ -143,8 +146,10 @@ function generateIndividualSchedule(
         scoreB: 0,
         id: uid(),
       };
+
       const [a1, a2] = match.teamA;
       const [b1, b2] = match.teamB;
+      // actualizar matrices de repeticiones
       incPair(teammateCounts, a1.id, a2.id);
       incPair(teammateCounts, b1.id, b2.id);
       for (const x of [a1, a2]) for (const y of [b1, b2]) incPair(matchupCounts, x.id, y.id);
@@ -152,13 +157,12 @@ function generateIndividualSchedule(
       matches.push(match);
     }
 
-    // guarda como "ronda": partidos + quién descansó
     roundsOut.push({ matches, resting });
   }
 
   return {
     rounds: roundsOut,
-    history: { teammateCounts, matchupCounts, restCounts: newRestCounts },
+    history: { teammateCounts, matchupCounts, restCounts },
   };
 }
 
@@ -273,6 +277,10 @@ export default function App() {
 
   useEffect(() => setRoundsDraft(String(rounds)), [rounds]);
   useEffect(() => setCourtsDraft(String(courts)), [courts]);
+  // Al cambiar de modo, limpia el calendario para evitar formas incompatibles
+  useEffect(() => {
+    setSchedule([]);
+  }, [mode]);
 
   function commitRounds() {
     const n = clamp(parseInt(roundsDraft || "0", 10) || 0, 1, 20);
@@ -466,16 +474,23 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
 
-  function newTournament() {
+  function newTournament(opts: { hardResetPlayersTeams?: boolean } = {}) {
+    const { hardResetPlayersTeams = true } = opts;
+
+    try { localStorage.removeItem(STORE_KEY); } catch { }
+
     setTournamentId(uid());
     setSchedule([]);
     setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
-    setTeamPlan(null);
-    setTeamRoundIdx(0);
-    // (opcional) reset también jugadores/equipos:
-    // setPlayers([]); setTeams([]);
+
+    if (hardResetPlayersTeams) {
+      setPlayers([]);
+      setTeams([]);
+    }
+
     alert("¡Nuevo torneo creado! ✅");
   }
+
 
   // ---------- UI ----------
   return (
@@ -692,11 +707,12 @@ export default function App() {
 
                   // IDs de equipos que sí juegan (usamos teamIdA/B que metimos arriba)
                   const playingIds = new Set(
-                    (mode === MODES.TEAMS ? matches : []).flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
+                    matches.flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
                   );
                   // Equipos que NO están jugando en esta ronda ⇒ descansan (esto incluye el BYE implícitamente)
-                  const restingTeams = mode === MODES.TEAMS ? teams.filter((t: any) => !playingIds.has(t.id)) : [];
-
+                  const restingTeams = mode === MODES.TEAMS
+                    ? teams.filter((t: any) => !playingIds.has(t.id))
+                    : [];
                   return (
                     <div key={rIdx} className="border rounded-2xl p-3">
                       <div className="flex items-center justify-between mb-3">
@@ -767,9 +783,7 @@ export default function App() {
                         <div className="mt-3 text-sm text-slate-600">
                           <div className="font-medium">Descansan:</div>
                           <ul className="list-disc pl-5">
-                            {restingTeams.map((t: any) => (
-                              <li key={t.id}>{t.name}</li>
-                            ))}
+                            {restingTeams.map((t: any) => <li key={t.id}>{t.name}</li>)}
                           </ul>
                         </div>
                       )}
