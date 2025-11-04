@@ -35,32 +35,42 @@ function shuffleArray<T>(arr: T[]) {
 // ---------- TEAM RR (método del círculo) ----------
 function generateTeamRoundRobin(teams: any[], roundsLimit?: number) {
   const n = teams.length;
-  if (n < 2) return [];
-  const isOdd = n % 2 === 1;
-  const list = isOdd ? [...teams, { id: "BYE", name: "BYE", players: [] }] : [...teams];
+  if (n < 2) return [] as any[][];
+
+  // Aleatoriza el orden de entrada para que los cruces no sean siempre los mismos
+  const base = shuffleArray(teams);
+
+  // Añade BYE si es impar (para poder detectar descansos)
+  const isOdd = base.length % 2 === 1;
+  const list = isOdd ? [...base, { id: "BYE", name: "BYE", players: [] }] : [...base];
+
   const m = list.length;
   const half = m / 2;
   let left = list.slice(0, half);
   let right = list.slice(half).reverse();
-  const rounds: any[] = [];
+  const rounds: any[][] = [];
 
   const totalRounds = roundsLimit ? clamp(roundsLimit, 1, m - 1) : m - 1;
+
   for (let r = 0; r < totalRounds; r++) {
     const pairings: any[] = [];
     for (let i = 0; i < half; i++) {
       const a = left[i];
       const b = right[i];
-      if (a.id !== "BYE" && b.id !== "BYE") pairings.push([a, b]);
+      // Guardamos todos los cruces, incluidos BYE (nos sirven para detectar descansos),
+      // luego al construir las canchas filtramos o rotamos.
+      pairings.push([a, b]);
     }
     rounds.push(pairings);
 
-    // rotación
+    // rotación (excepto el primero de la izquierda)
     const fixed = left[0];
     const moved = right.shift();
     right.push(left.pop());
     left = [fixed, moved, ...left.slice(1)];
   }
-  return rounds; // [ [ [teamA, teamB], ... ], ... ]
+
+  return rounds; // cada ronda trae pares [A,B], pudiendo haber BYE en alguno
 }
 
 // ---------- INDIVIDUAL (greedy con penalizaciones) ----------
@@ -310,26 +320,37 @@ export default function App() {
 
   function generateSchedule() {
     if (mode === MODES.TEAMS) {
-      // Genera TODO el round-robin una vez y guárdalo como plan
-      const fullPlan = generateTeamRoundRobin(teams); // todas las rondas
-      setTeamPlan(fullPlan);
-      setTeamRoundIdx(0);
+      const rr = generateTeamRoundRobin(teams, rounds);
 
-      // Toma las primeras 'rounds' y respeta 'courts'
-      const sched = fullPlan.slice(0, rounds).map((pairings: any[]) =>
-        pairings.slice(0, courts).map(([A, B]: any[]) => ({
+      const sched = rr.map((pairings: any[], rIndex: number) => {
+        // 1) Aleatoriza el orden de cruces en esta ronda
+        const randomized = shuffleArray(pairings);
+
+        // 2) Elimina los cruces donde haya BYE (esos son los descansos)
+        const playable = randomized.filter(
+          ([A, B]) => A.id !== "BYE" && B.id !== "BYE"
+        );
+
+        // 3) Rotación circular en función de la ronda para repartir uso de canchas
+        //    Ej.: con 3 cruces y 2 canchas → R1 toma [0,1], R2 toma [1,2], R3 [2,0], ...
+        const start = playable.length > 0 ? (rIndex % playable.length) : 0;
+        const take = Math.min(courts, playable.length);
+        const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
+
+        return chosen.map(([A, B]) => ({
           id: uid(),
           teamA: A.players,
           teamB: B.players,
           teamNameA: A.name,
           teamNameB: B.name,
-          teamIdA: A.id, // necesario para "Descansan"
-          teamIdB: B.id, // necesario para "Descansan"
+          teamIdA: A.id,
+          teamIdB: B.id,
           scoreA: 0,
           scoreB: 0,
-        }))
-      );
-      setSchedule(sched); // TEAMS: array de rondas => ronda es array de partidos
+        }));
+      });
+
+      setSchedule(sched);
       return;
     }
 
@@ -378,21 +399,32 @@ export default function App() {
       setSchedule((prev: any[]) => [...prev, rr[0]]);
       setHistory(h);
     } else {
-      const rr = generateTeamRoundRobin(teams, 1);
-      const sched = rr.map((pairings: any[]) =>
-        pairings.slice(0, courts).map(([A, B]) => ({
-          id: uid(),
-          teamA: A.players,
-          teamB: B.players,
-          teamNameA: A.name,
-          teamNameB: B.name,
-          teamIdA: A.id, // <-- importante
-          teamIdB: B.id, // <-- importante
-          scoreA: 0,
-          scoreB: 0,
-        }))
+      const rr = generateTeamRoundRobin(teams, 1); // 1 ronda de cruces
+      const next = rr[0] || [];
+
+      // aleatoriza orden y filtra BYE
+      const playable = shuffleArray(next).filter(
+        ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
       );
-      setSchedule((prev: any[]) => [...prev, ...sched]);
+
+      // calcula el start en función de cuántas rondas ya llevas
+      const start = playable.length > 0 ? (schedule.length % playable.length) : 0;
+      const take = Math.min(courts, playable.length);
+      const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
+
+      const schedRound = chosen.map(([A, B]: any[]) => ({
+        id: uid(),
+        teamA: A.players,
+        teamB: B.players,
+        teamNameA: A.name,
+        teamNameB: B.name,
+        teamIdA: A.id,
+        teamIdB: B.id,
+        scoreA: 0,
+        scoreB: 0,
+      }));
+
+      setSchedule((prev: any[]) => [...prev, schedRound]);
     }
   }
 
@@ -655,16 +687,15 @@ export default function App() {
                 {schedule.map((round: any, rIdx: number) => {
                   // Para TEAMS: round es array de partidos
                   // Para INDIVIDUAL: round = { matches, resting }
-                  const matches = mode === MODES.TEAMS ? (round as any[]) : round.matches;
+                  // Dentro del map de schedule (por ronda):
+                  const matches = mode === MODES.TEAMS ? round : round.matches;
 
-                  // --- Descansan (solo Equipos fijos) ---
+                  // IDs de equipos que sí juegan (usamos teamIdA/B que metimos arriba)
                   const playingIds = new Set(
-                    matches.flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
+                    (mode === MODES.TEAMS ? matches : []).flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
                   );
-                  const restingTeams =
-                    mode === MODES.TEAMS
-                      ? teams.filter((t: any) => !playingIds.has(t.id))
-                      : [];
+                  // Equipos que NO están jugando en esta ronda ⇒ descansan (esto incluye el BYE implícitamente)
+                  const restingTeams = mode === MODES.TEAMS ? teams.filter((t: any) => !playingIds.has(t.id)) : [];
 
                   return (
                     <div key={rIdx} className="border rounded-2xl p-3">
