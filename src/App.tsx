@@ -555,8 +555,7 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
-              <button
-                onClick={newTournament}
+              <button onClick={() => newTournament()}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white"
               >
                 <PlayCircle className="w-4 h-4" />
