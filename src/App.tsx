@@ -475,7 +475,7 @@ export default function App() {
       alert("No hay resultados para exportar todavía.");
       return;
     }
-    const headers = ["Pos", "Nombre", "PJ", "PG", "PE", "PP", "PtsF", "PtsC", "DifP", "Pts"];
+    const headers = ["Pos", "Nombre", "PJ", "PG", "PE", "PP", "GF", "GC", "DG", "Pts"];
     const rows = standings.map((r: any, i: number) => [
       i + 1,
       r.name ?? r.teamName ?? "—",
@@ -912,9 +912,9 @@ export default function App() {
                       <th className="py-2 pr-3">PG</th>
                       <th className="py-2 pr-3">PE</th>
                       <th className="py-2 pr-3">PP</th>
-                      <th className="py-2 pr-3">PtsF</th>
-                      <th className="py-2 pr-3">PTSC</th>
-                      <th className="py-2 pr-3">DifP</th>
+                      <th className="py-2 pr-3">GF</th>
+                      <th className="py-2 pr-3">GC</th>
+                      <th className="py-2 pr-3">DG</th>
                       <th className="py-2 pr-3">Pts</th>
                     </tr>
                   </thead>
@@ -927,9 +927,9 @@ export default function App() {
                         <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
                         <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
                         <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                        <td className="py-2 pr-3">{r.Ptsf ?? 0}</td>
-                        <td className="py-2 pr-3">{r.Ptsc ?? 0}</td>
-                        <td className="py-2 pr-3">{(r.DifP ?? ((r.gf ?? 0) - (r.gc ?? 0)))}</td>
+                        <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                        <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.dg ?? ((r.gf ?? 0) - (r.gc ?? 0)))}</td>
                         <td className="py-2 pr-3 font-medium">{r.pts ?? r.points ?? 0}</td>
                       </tr>
                     ))}
