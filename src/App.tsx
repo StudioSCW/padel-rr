@@ -475,7 +475,7 @@ export default function App() {
       alert("No hay resultados para exportar todavía.");
       return;
     }
-    const headers = ["Pos", "Nombre", "PJ", "PG", "PE", "PP", "GF", "GC", "DG", "Pts"];
+    const headers = ["Pos", "Nombre", "PJ", "PG", "PE", "PP", "PF", "PC", "Dif", "Pts"];
     const rows = standings.map((r: any, i: number) => [
       i + 1,
       r.name ?? r.teamName ?? "—",
@@ -912,10 +912,10 @@ export default function App() {
                       <th className="py-2 pr-3">PG</th>
                       <th className="py-2 pr-3">PE</th>
                       <th className="py-2 pr-3">PP</th>
-                      <th className="py-2 pr-3">GF</th>
-                      <th className="py-2 pr-3">GC</th>
-                      <th className="py-2 pr-3">DG</th>
-                      <th className="py-2 pr-3">Pts</th>
+                      <th className="py-2 pr-3">PF</th>   {/* Puntos a favor */}
+                      <th className="py-2 pr-3">PC</th>   {/* Puntos en contra */}
+                      <th className="py-2 pr-3">Dif</th>  {/* Diferencia */}
+                      <th className="py-2 pr-3">Pts</th>  {/* Puntos de clasificación */}
                     </tr>
                   </thead>
                   <tbody>
