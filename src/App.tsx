@@ -215,6 +215,9 @@ export default function App() {
   const [players, setPlayers] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [nameInput, setNameInput] = useState("");
+  const [teamNameInput, setTeamNameInput] = useState("");
+  const [teamP1Input, setTeamP1Input] = useState("");
+  const [teamP2Input, setTeamP2Input] = useState("");
   const [rounds, setRounds] = useState<number>(5);
   const [courts, setCourts] = useState<number>(2);
   const [schedule, setSchedule] = useState<any[]>([]); // INDIVIDUAL: [{matches, resting}], TEAMS: matches[][]
@@ -324,6 +327,37 @@ export default function App() {
     setTeams([]);
     setSchedule([]);
     setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
+  }
+  function addTeamManual() {
+    const p1 = teamP1Input.trim();
+    const p2 = teamP2Input.trim();
+    if (!p1 || !p2) {
+      alert("Debes ingresar el nombre de los dos jugadores.");
+      return;
+    }
+
+    const teamName =
+      (teamNameInput.trim() || `${p1} & ${p2}`).slice(0, 40);
+
+    const playerA = { id: uid(), name: p1 };
+    const playerB = { id: uid(), name: p2 };
+
+    setTeams((prev) => [
+      ...prev,
+      {
+        id: uid(),
+        name: teamName,
+        players: [playerA, playerB],
+      },
+    ]);
+
+    setTeamNameInput("");
+    setTeamP1Input("");
+    setTeamP2Input("");
+  }
+
+  function removeTeam(id: string) {
+    setTeams((prev) => prev.filter((t) => t.id !== id));
   }
 
   function generateSchedule() {
@@ -613,35 +647,83 @@ export default function App() {
                 </ul>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="text-sm text-slate-600">
-                  Crea equipos desde jugadores (pares aleatorios).
+              <div className="space-y-4">
+                {/* Formulario para agregar equipos/parejas manualmente */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-slate-700">
+                    Agregar equipo / pareja
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    <input
+                      value={teamNameInput}
+                      onChange={(e) => setTeamNameInput(e.target.value)}
+                      placeholder="Nombre del equipo (opcional)"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        value={teamP1Input}
+                        onChange={(e) => setTeamP1Input(e.target.value)}
+                        placeholder="Jugador 1"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={teamP2Input}
+                        onChange={(e) => setTeamP2Input(e.target.value)}
+                        placeholder="Jugador 2"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <button
+                      onClick={addTeamManual}
+                      className="w-full mt-1 px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Agregar equipo
+                    </button>
+                  </div>
+                </div>
+
+                {/* Generación automática desde jugadores (opcional) */}
+                <div className="text-sm text-slate-600 border-t pt-3">
+                  También puedes crear equipos desde la lista de jugadores (pares aleatorios).
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={createTeamsAuto}
-                      className="px-3 py-2 rounded-xl bg-slate-900 text-white"
+                      className="px-3 py-2 rounded-xl bg-slate-900 text-white text-sm"
                     >
                       Formar equipos
                     </button>
                     <button
                       onClick={() => setTeams([])}
-                      className="px-3 py-2 rounded-xl border"
+                      className="px-3 py-2 rounded-xl border text-sm"
                     >
                       Reiniciar
                     </button>
                   </div>
                 </div>
+
+                {/* Lista de equipos */}
                 <div className="space-y-2">
                   {teams.length === 0 && (
                     <div className="text-sm text-slate-500">No hay equipos aún.</div>
                   )}
                   <ul className="space-y-2 max-h-48 overflow-auto pr-1">
                     {teams.map((t) => (
-                      <li key={t.id} className="border rounded-xl p-2">
-                        <div className="font-medium">{t.name}</div>
-                        <div className="text-sm text-slate-600">
-                          {t.players.map((p: any) => p.name).join(" · ")}
+                      <li key={t.id} className="border rounded-xl p-2 flex items-center justify-between gap-2">
+                        <div>
+                          <div className="font-medium text-sm">{t.name}</div>
+                          <div className="text-xs text-slate-600">
+                            {t.players.map((p: any) => p.name).join(" · ")}
+                          </div>
                         </div>
+                        <button
+                          onClick={() => removeTeam(t.id)}
+                          className="text-slate-400 hover:text-red-600"
+                          title="Eliminar equipo"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </li>
                     ))}
                   </ul>
