@@ -1,3 +1,4 @@
+
 // src/App.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -322,12 +323,6 @@ export default function App() {
     }
     setTeams(t);
   }
-  function clearAll() {
-    setPlayers([]);
-    setTeams([]);
-    setSchedule([]);
-    setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
-  }
   function addTeamManual() {
     const p1 = teamP1Input.trim();
     const p2 = teamP2Input.trim();
@@ -358,6 +353,12 @@ export default function App() {
 
   function removeTeam(id: string) {
     setTeams((prev) => prev.filter((t) => t.id !== id));
+  }
+  function clearAll() {
+    setPlayers([]);
+    setTeams([]);
+    setSchedule([]);
+    setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
   }
 
   function generateSchedule() {
