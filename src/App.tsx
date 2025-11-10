@@ -46,29 +46,25 @@ function generateTeamRoundRobin(teams: any[], roundsLimit?: number) {
   const list = isOdd ? [...base, { id: "BYE", name: "BYE", players: [] }] : [...base];
 
   const m = list.length;
-  const half = m / 2;
-  let left = list.slice(0, half);
-  let right = list.slice(half).reverse();
-  const rounds: any[][] = [];
-
   const totalRounds = roundsLimit ? clamp(roundsLimit, 1, m - 1) : m - 1;
+
+  // Usamos el algoritmo clásico: en cada ronda emparejamos arr[i] con arr[m-1-i]
+  // y luego rotamos moviendo el último elemento a la posición 1.
+  const arr = [...list];
+  const rounds: any[][] = [];
 
   for (let r = 0; r < totalRounds; r++) {
     const pairings: any[] = [];
-    for (let i = 0; i < half; i++) {
-      const a = left[i];
-      const b = right[i];
-      // Guardamos todos los cruces, incluidos BYE (nos sirven para detectar descansos),
-      // luego al construir las canchas filtramos o rotamos.
-      pairings.push([a, b]);
+    for (let i = 0; i < m / 2; i++) {
+      pairings.push([arr[i], arr[m - 1 - i]]);
     }
     rounds.push(pairings);
 
-    // rotación (excepto el primero de la izquierda)
-    const fixed = left[0];
-    const moved = right.shift();
-    right.push(left.pop());
-    left = [fixed, moved, ...left.slice(1)];
+    // Rotación: sacar último y ponerlo en la posición 1
+    const last = arr.pop();
+    if (last !== undefined) {
+      arr.splice(1, 0, last);
+    }
   }
 
   return rounds; // cada ronda trae pares [A,B], pudiendo haber BYE en alguno
@@ -363,19 +359,36 @@ export default function App() {
 
   function generateSchedule() {
     if (mode === MODES.TEAMS) {
-      const rr = generateTeamRoundRobin(teams, rounds);
+      // Generamos el plan completo (round-robin clásico) una sola vez por generación
+      const fullPlan = generateTeamRoundRobin(teams); // length = m-1 (m includes BYE if needed)
+      if (!fullPlan || fullPlan.length === 0) {
+        setSchedule([]);
+        setTeamPlan(null);
+        setTeamRoundIdx(0);
+        return;
+      }
 
-      const sched = rr.map((pairings: any[], rIndex: number) => {
-        // 1) Aleatoriza el orden de cruces en esta ronda
-        const randomized = shuffleArray(pairings);
+      // Construimos un plan extendido si pedimos más rondas que fullPlan.length:
+      const needed = rounds;
+      const extended: any[] = [];
+      while (extended.length < needed) {
+        // añadimos todas las rondas del fullPlan en el mismo orden (repetimos ciclos si hace falta)
+        for (const p of fullPlan) {
+          if (extended.length >= needed) break;
+          extended.push(p);
+        }
+      }
 
-        // 2) Elimina los cruces donde haya BYE (esos son los descansos)
-        const playable = randomized.filter(
-          ([A, B]) => A.id !== "BYE" && B.id !== "BYE"
-        );
+      // Guardamos el plan (en términos de pairings por ronda)
+      setTeamPlan(extended);
+      setTeamRoundIdx(0);
 
-        // 3) Rotación circular en función de la ronda para repartir uso de canchas
-        //    Ej.: con 3 cruces y 2 canchas → R1 toma [0,1], R2 toma [1,2], R3 [2,0], ...
+      // Ahora convertimos las rondas a la estructura schedule (aplicando filtrado BYE y tomando 'take' por cancha)
+      const sched = extended.map((pairings: any[], rIndex: number) => {
+        // NO barajamos aquí (usar el orden del plan). Filtramos BYE.
+        const playable = pairings.filter(([A, B]) => A.id !== "BYE" && B.id !== "BYE");
+
+        // Si hay más cruces que canchas, rotamos la ventana de selección para repartir uso de canchas
         const start = playable.length > 0 ? (rIndex % playable.length) : 0;
         const take = Math.min(courts, playable.length);
         const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
@@ -442,17 +455,46 @@ export default function App() {
       setSchedule((prev: any[]) => [...prev, rr[0]]);
       setHistory(h);
     } else {
-      const rr = generateTeamRoundRobin(teams, 1); // 1 ronda de cruces
-      const next = rr[0] || [];
+      // Si ya existe un plan persistente lo usamos, si no lo generamos
+      if (!teamPlan || teamPlan.length === 0) {
+        const fullPlan = generateTeamRoundRobin(teams); // plan completo (m-1 rondas)
+        if (!fullPlan || fullPlan.length === 0) return;
 
-      // aleatoriza orden y filtra BYE
-      const playable = shuffleArray(next).filter(
-        ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
-      );
+        // Guardamos el plan y lo preparamos para ser usado por "Nueva ronda"
+        setTeamPlan(fullPlan);
+        setTeamRoundIdx(0);
 
-      // calcula el start en función de cuántas rondas ya llevas
-      const start = playable.length > 0 ? (schedule.length % playable.length) : 0;
+        // Tomamos la primera ronda del plan para añadir ahora
+        const pairings = fullPlan[0] || [];
+        const playable = pairings.filter(([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE");
+        const take = Math.min(courts, playable.length);
+        const chosen = Array.from({ length: take }, (_, i) => playable[i % playable.length]);
+
+        const schedRound = chosen.map(([A, B]: any[]) => ({
+          id: uid(),
+          teamA: A.players,
+          teamB: B.players,
+          teamNameA: A.name,
+          teamNameB: B.name,
+          teamIdA: A.id,
+          teamIdB: B.id,
+          scoreA: 0,
+          scoreB: 0,
+        }));
+
+        setSchedule((prev: any[]) => [...prev, schedRound]);
+        setTeamRoundIdx(1 % fullPlan.length);
+        return;
+      }
+
+      // Si ya hay un plan persistente, usamos la siguiente ronda según teamRoundIdx
+      const idx = teamRoundIdx % teamPlan.length;
+      const pairings = teamPlan[idx] || [];
+
+      const playable = pairings.filter(([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE");
       const take = Math.min(courts, playable.length);
+      // start se calcula para repartir uso de canchas en función de cuántas rondas ya existen
+      const start = schedule.length % (playable.length || 1);
       const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
 
       const schedRound = chosen.map(([A, B]: any[]) => ({
@@ -468,6 +510,7 @@ export default function App() {
       }));
 
       setSchedule((prev: any[]) => [...prev, schedRound]);
+      setTeamRoundIdx((n) => n + 1);
     }
   }
 
@@ -867,7 +910,7 @@ export default function App() {
                       )}
 
                       {/* Descansan (INDIVIDUAL) */}
-                      {mode === MODES.INDIVIDUAL &&
+                      {NDIVIDUAL &&
                         round.resting &&
                         round.resting.length > 0 && (
                           <div className="mt-3 text-sm text-slate-600">
@@ -980,7 +1023,7 @@ function computeStandings(mode: string, schedule: any[], players: any[], teams: 
     if (!table.has(id)) table.set(id, { id, name, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, pts: 0 });
   };
 
-  if (mode === MODES.INDIVIDUAL) {
+  if (NDIVIDUAL) {
     players.forEach((p) => addRow(p.id, p.name));
   } else {
     teams.forEach((t) => addRow(t.id, t.name));
