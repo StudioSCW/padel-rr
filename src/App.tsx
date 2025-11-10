@@ -229,6 +229,11 @@ export default function App() {
   const [teamPlan, setTeamPlan] = useState<any[] | null>(null); // [[ [A,B], [C,D] ... ], ...]
   const [teamRoundIdx, setTeamRoundIdx] = useState<number>(0);  // índice de la siguiente ronda
 
+  useEffect(() => {
+    setTeamPlan(null);
+    setTeamRoundIdx(0);
+  }, [teams]);
+
   // Load persisted
   useEffect(() => {
     const s = loadStore();
@@ -359,8 +364,8 @@ export default function App() {
 
   function generateSchedule() {
     if (mode === MODES.TEAMS) {
-      // Generamos el plan completo (round-robin clásico) una sola vez por generación
-      const fullPlan = generateTeamRoundRobin(teams); // length = m-1 (m includes BYE if needed)
+      // Generamos el plan completo (m-1 rondas)
+      const fullPlan = generateTeamRoundRobin(teams); // devuelve m-1 rondas
       if (!fullPlan || fullPlan.length === 0) {
         setSchedule([]);
         setTeamPlan(null);
@@ -368,29 +373,44 @@ export default function App() {
         return;
       }
 
-      // Construimos un plan extendido si pedimos más rondas que fullPlan.length:
+      // Queremos N rondas (valor pedido por el usuario en `rounds`).
+      // Si rounds > fullPlan.length repetimos ciclos hasta cubrirlo.
       const needed = rounds;
       const extended: any[] = [];
-      while (extended.length < needed) {
-        // añadimos todas las rondas del fullPlan en el mismo orden (repetimos ciclos si hace falta)
-        for (const p of fullPlan) {
+
+      // Opción: si quieres que las repeticiones no sean idénticas,
+      // aquí introducimos una ligera rotación de los pairings por cada ciclo.
+      // (Si NO quieres rotación, reemplaza la lógica dentro del for por extended.push(...fullPlan))
+      const cycles = Math.ceil(needed / fullPlan.length);
+      for (let c = 0; c < cycles; c++) {
+        for (let r = 0; r < fullPlan.length; r++) {
           if (extended.length >= needed) break;
-          extended.push(p);
+
+          // tomamos una copia de la ronda original
+          const originalPairings = fullPlan[r];
+          // rotamos el orden de pairings por ciclo c (esto solo cambia el orden en que se muestran los cruces,
+          // no los enfrentamientos en sí — pero ayuda a que la segunda vuelta no luzca exactamente igual)
+          const rotated = originalPairings.slice().map((_, idx) => {
+            const newIdx = (idx + c) % originalPairings.length;
+            return originalPairings[newIdx];
+          });
+
+          extended.push(rotated);
         }
       }
 
-      // Guardamos el plan (en términos de pairings por ronda)
+      // Guardamos el plan persistente y reiniciamos el índice
       setTeamPlan(extended);
       setTeamRoundIdx(0);
 
-      // Ahora convertimos las rondas a la estructura schedule (aplicando filtrado BYE y tomando 'take' por cancha)
+      // Convertimos extended (pairings por ronda) a la estructura schedule usada por la UI
       const sched = extended.map((pairings: any[], rIndex: number) => {
-        // NO barajamos aquí (usar el orden del plan). Filtramos BYE.
+        // No barajamos aquí: usamos el orden del plan (ya tiene variación por ciclo)
         const playable = pairings.filter(([A, B]) => A.id !== "BYE" && B.id !== "BYE");
-
-        // Si hay más cruces que canchas, rotamos la ventana de selección para repartir uso de canchas
-        const start = playable.length > 0 ? (rIndex % playable.length) : 0;
         const take = Math.min(courts, playable.length);
+
+        // Para repartir uso de canchas, desplazamos la ventana con start = rIndex % playable.length
+        const start = playable.length > 0 ? (rIndex % playable.length) : 0;
         const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
 
         return chosen.map(([A, B]) => ({
