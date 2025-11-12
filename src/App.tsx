@@ -363,9 +363,12 @@ export default function App() {
   }
 
   function generateSchedule() {
+    // 👇 Asegura que tomamos el valor que el usuario tiene escrito
+    commitRounds();
+    commitCourts();
     if (mode === MODES.TEAMS) {
       // Generamos el plan completo (m-1 rondas)
-      const fullPlan = generateTeamRoundRobin(teams); // devuelve m-1 rondas
+      const fullPlan = generateTeamRoundRobin(teams); // m-1 rondas
       if (!fullPlan || fullPlan.length === 0) {
         setSchedule([]);
         setTeamPlan(null);
@@ -465,57 +468,28 @@ export default function App() {
   }
 
   function randomizeNextRound() {
+    // 👇 Por si el usuario cambió canchas/rondas justo antes
+    commitRounds();
+    commitCourts();
+
     if (mode === MODES.INDIVIDUAL) {
-      const { rounds: rr, history: h } = generateIndividualSchedule(
-        players,
-        1,
-        courts,
-        history
-      );
+      const { rounds: rr, history: h } = generateIndividualSchedule(players, 1, courts, history);
       setSchedule((prev: any[]) => [...prev, rr[0]]);
       setHistory(h);
-    } else {
-      // Si ya existe un plan persistente lo usamos, si no lo generamos
-      if (!teamPlan || teamPlan.length === 0) {
-        const fullPlan = generateTeamRoundRobin(teams); // plan completo (m-1 rondas)
-        if (!fullPlan || fullPlan.length === 0) return;
+      return;
+    }
 
-        // Guardamos el plan y lo preparamos para ser usado por "Nueva ronda"
-        setTeamPlan(fullPlan);
-        setTeamRoundIdx(0);
+    if (!teamPlan || teamPlan.length === 0) {
+      const fullPlan = generateTeamRoundRobin(teams);
+      if (!fullPlan || fullPlan.length === 0) return;
 
-        // Tomamos la primera ronda del plan para añadir ahora
-        const pairings = fullPlan[0] || [];
-        const playable = pairings.filter(([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE");
-        const take = Math.min(courts, playable.length);
-        const chosen = Array.from({ length: take }, (_, i) => playable[i % playable.length]);
+      setTeamPlan(fullPlan);
+      setTeamRoundIdx(0);
 
-        const schedRound = chosen.map(([A, B]: any[]) => ({
-          id: uid(),
-          teamA: A.players,
-          teamB: B.players,
-          teamNameA: A.name,
-          teamNameB: B.name,
-          teamIdA: A.id,
-          teamIdB: B.id,
-          scoreA: 0,
-          scoreB: 0,
-        }));
-
-        setSchedule((prev: any[]) => [...prev, schedRound]);
-        setTeamRoundIdx(1 % fullPlan.length);
-        return;
-      }
-
-      // Si ya hay un plan persistente, usamos la siguiente ronda según teamRoundIdx
-      const idx = teamRoundIdx % teamPlan.length;
-      const pairings = teamPlan[idx] || [];
-
+      const pairings = fullPlan[0] || [];
       const playable = pairings.filter(([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE");
       const take = Math.min(courts, playable.length);
-      // start se calcula para repartir uso de canchas en función de cuántas rondas ya existen
-      const start = schedule.length % (playable.length || 1);
-      const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
+      const chosen = Array.from({ length: take }, (_, i) => playable[i % playable.length]);
 
       const schedRound = chosen.map(([A, B]: any[]) => ({
         id: uid(),
@@ -530,8 +504,31 @@ export default function App() {
       }));
 
       setSchedule((prev: any[]) => [...prev, schedRound]);
-      setTeamRoundIdx((n) => n + 1);
+      setTeamRoundIdx(1 % fullPlan.length);
+      return;
     }
+
+    const idx = teamRoundIdx % teamPlan.length;
+    const pairings = teamPlan[idx] || [];
+    const playable = pairings.filter(([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE");
+    const take = Math.min(courts, playable.length);
+    const start = schedule.length % (playable.length || 1);
+    const chosen = Array.from({ length: take }, (_, i) => playable[(start + i) % playable.length]);
+
+    const schedRound = chosen.map(([A, B]: any[]) => ({
+      id: uid(),
+      teamA: A.players,
+      teamB: B.players,
+      teamNameA: A.name,
+      teamNameB: B.name,
+      teamIdA: A.id,
+      teamIdB: B.id,
+      scoreA: 0,
+      scoreB: 0,
+    }));
+
+    setSchedule((prev: any[]) => [...prev, schedRound]);
+    setTeamRoundIdx((n) => n + 1);
   }
 
   function exportStandingsCSV() {
@@ -930,7 +927,7 @@ export default function App() {
                       )}
 
                       {/* Descansan (INDIVIDUAL) */}
-                      {NDIVIDUAL &&
+                      {mode === MODES.INDIVIDUAL &&
                         round.resting &&
                         round.resting.length > 0 && (
                           <div className="mt-3 text-sm text-slate-600">
@@ -1043,11 +1040,12 @@ function computeStandings(mode: string, schedule: any[], players: any[], teams: 
     if (!table.has(id)) table.set(id, { id, name, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, pts: 0 });
   };
 
-  if (NDIVIDUAL) {
+  if (mode === MODES.INDIVIDUAL) {
     players.forEach((p) => addRow(p.id, p.name));
   } else {
     teams.forEach((t) => addRow(t.id, t.name));
   }
+
 
   schedule.forEach((round: any) => {
     const matches = mode === MODES.TEAMS ? round : round.matches;
