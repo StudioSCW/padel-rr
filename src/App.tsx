@@ -265,6 +265,8 @@ function incPair(matrix: any, a: string, b: string) {
 
 // ---------- STORAGE ----------
 const STORE_KEY = "padel-rr-v1";
+// URL del Web App de Apps Script (cámbiala por la tuya)
+const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbwLFV2ltMzUngHgw7MQRwjPoIWKWZQtt3cgYwGWRlVCc3vlO7Fp0_xMVeCzjOqZDrnNqQ/exec";
 const loadStore = () => {
   try {
     return JSON.parse(localStorage.getItem(STORE_KEY) || "null") || null;
@@ -698,6 +700,44 @@ export default function App() {
 
     alert("¡Nuevo torneo creado! ✅");
   }
+  async function syncToGoogleSheets() {
+    if (!SHEETS_SYNC_URL) {
+      alert("No se ha configurado la URL de Google Sheets.");
+      return;
+    }
+    if (!standings || standings.length === 0) {
+      alert("No hay resultados para enviar todavía.");
+      return;
+    }
+
+    try {
+      const payload = {
+        mode,
+        courts,
+        rounds,
+        tournamentId,
+        timestamp: new Date().toISOString(),
+        teams,
+        players,
+        standings,
+        schedule,
+      };
+
+      const res = await fetch(SHEETS_SYNC_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Opcional: leer respuesta
+      // const data = await res.json();
+      alert("Resultados enviados a Google Sheets ✅");
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un problema al enviar los datos a Google Sheets 😕");
+    }
+  }
 
   // ---------- UI ----------
   return (
@@ -1103,12 +1143,20 @@ export default function App() {
           <div className="bg-white rounded-2xl shadow p-4 mt-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Tabla general</h2>
-              <button
-                onClick={exportStandingsCSV}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-sm"
-              >
-                Descargar resultados
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={syncToGoogleSheets}
+                  className="px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm"
+                >
+                  Enviar a Google Sheets
+                </button>
+                <button
+                  onClick={exportStandingsCSV}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-sm"
+                >
+                  Descargar resultados
+                </button>
+              </div>
             </div>
 
             {/* Resumen rápido de configuración y equilibrio de partidos */}
