@@ -265,8 +265,6 @@ function incPair(matrix: any, a: string, b: string) {
 
 // ---------- STORAGE ----------
 const STORE_KEY = "padel-rr-v1";
-// URL del Web App de Apps Script (cámbiala por la tuya)
-const SHEETS_SYNC_URL = "https://script.google.com/macros/s/AKfycbwLFV2ltMzUngHgw7MQRwjPoIWKWZQtt3cgYwGWRlVCc3vlO7Fp0_xMVeCzjOqZDrnNqQ/exec";
 const loadStore = () => {
   try {
     return JSON.parse(localStorage.getItem(STORE_KEY) || "null") || null;
@@ -700,54 +698,6 @@ export default function App() {
 
     alert("¡Nuevo torneo creado! ✅");
   }
-  async function syncToGoogleSheets() {
-    if (!SHEETS_SYNC_URL) {
-      alert("No se ha configurado la URL de Google Sheets.");
-      return;
-    }
-    if (!standings || standings.length === 0) {
-      alert("No hay resultados para enviar todavía.");
-      return;
-    }
-
-    try {
-      const payload = {
-        mode,
-        courts,
-        rounds,
-        tournamentId,
-        timestamp: new Date().toISOString(),
-        teams,
-        players,
-        standings,
-        schedule,
-      };
-
-      console.log("Enviando a Sheets payload:", payload);
-
-      const res = await fetch(SHEETS_SYNC_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text(); // leemos SIEMPRE la respuesta como texto
-      console.log("Sheets response status:", res.status);
-      console.log("Sheets response body:", text);
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status} – ${text}`);
-      }
-
-      // si tu Apps Script devuelve JSON, puedes intentar parsearlo:
-      // const data = JSON.parse(text);
-
-      alert("Resultados enviados a Google Sheets ✅");
-    } catch (err) {
-      console.error("Error al enviar a Google Sheets:", err);
-      alert("Hubo un problema al enviar los datos a Google Sheets 😕");
-    }
-  }
 
   // ---------- UI ----------
   return (
@@ -1153,109 +1103,94 @@ export default function App() {
           <div className="bg-white rounded-2xl shadow p-4 mt-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Tabla general</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={syncToGoogleSheets}
-                  className="px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm"
-                >
-                  Enviar a Google Sheets
-                </button>
-                <button
-                  onClick={exportStandingsCSV}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-sm"
-                >
-                  Descargar resultados
-                </button>
-              </div>
-            </div>
 
-            {/* Resumen rápido de configuración y equilibrio de partidos */}
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
-              </span>
-
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                {mode === MODES.TEAMS
-                  ? `Equipos: ${teams.length}`
-                  : `Jugadores: ${players.length}`}
-              </span>
-
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                Rondas generadas: {schedule.length}
-              </span>
-
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                Canchas: {courts}
-              </span>
-
-              {mode === MODES.TEAMS && gamesBalanceInfo && (
-                <span
-                  className={
-                    "inline-flex items-center rounded-full px-2 py-0.5 border " +
-                    (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
-                      ? "border-amber-300 bg-amber-50 text-amber-700"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-700")
-                  }
-                >
-                  PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+              {/* Resumen rápido de configuración y equilibrio de partidos */}
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
                 </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  {mode === MODES.TEAMS
+                    ? `Equipos: ${teams.length}`
+                    : `Jugadores: ${players.length}`}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  Rondas generadas: {schedule.length}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  Canchas: {courts}
+                </span>
+
+                {mode === MODES.TEAMS && gamesBalanceInfo && (
+                  <span
+                    className={
+                      "inline-flex items-center rounded-full px-2 py-0.5 border " +
+                      (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                        ? "border-amber-300 bg-amber-50 text-amber-700"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-700")
+                    }
+                  >
+                    PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+                  </span>
+                )}
+              </div>
+
+              {standings.length === 0 ? (
+                <div className="text-sm text-slate-500">
+                  Juega o genera rondas para ver la tabla.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="text-left text-slate-500">
+                      <tr>
+                        <th className="py-2 pr-3">Pos</th>
+                        <th className="py-2 pr-3">Nombre</th>
+                        <th className="py-2 pr-3">PJ</th>
+                        <th className="py-2 pr-3">PG</th>
+                        <th className="py-2 pr-3">PE</th>
+                        <th className="py-2 pr-3">PP</th>
+                        <th className="py-2 pr-3">GF</th>
+                        <th className="py-2 pr-3">GC</th>
+                        <th className="py-2 pr-3">DG</th>
+                        <th className="py-2 pr-3">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standings.map((r: any, i: number) => (
+                        <tr key={r.id ?? r.name} className="border-t">
+                          <td className="py-2 pr-3">{i + 1}</td>
+                          <td className="py-2 pr-3">
+                            {r.name ?? r.teamName ?? "—"}
+                          </td>
+                          <td className="py-2 pr-3">{r.pj ?? 0}</td>
+                          <td className="py-2 pr-3">
+                            {(r.pg ?? r.win) ?? 0}
+                          </td>
+                          <td className="py-2 pr-3">
+                            {(r.pe ?? r.draw) ?? 0}
+                          </td>
+                          <td className="py-2 pr-3">
+                            {(r.pp ?? r.loss) ?? 0}
+                          </td>
+                          <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                          <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                          <td className="py-2 pr-3">
+                            {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
+                          </td>
+                          <td className="py-2 pr-3 font-medium">
+                            {r.pts ?? r.points ?? 0}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-
-            {standings.length === 0 ? (
-              <div className="text-sm text-slate-500">
-                Juega o genera rondas para ver la tabla.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="text-left text-slate-500">
-                    <tr>
-                      <th className="py-2 pr-3">Pos</th>
-                      <th className="py-2 pr-3">Nombre</th>
-                      <th className="py-2 pr-3">PJ</th>
-                      <th className="py-2 pr-3">PG</th>
-                      <th className="py-2 pr-3">PE</th>
-                      <th className="py-2 pr-3">PP</th>
-                      <th className="py-2 pr-3">GF</th>
-                      <th className="py-2 pr-3">GC</th>
-                      <th className="py-2 pr-3">DG</th>
-                      <th className="py-2 pr-3">Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standings.map((r: any, i: number) => (
-                      <tr key={r.id ?? r.name} className="border-t">
-                        <td className="py-2 pr-3">{i + 1}</td>
-                        <td className="py-2 pr-3">
-                          {r.name ?? r.teamName ?? "—"}
-                        </td>
-                        <td className="py-2 pr-3">{r.pj ?? 0}</td>
-                        <td className="py-2 pr-3">
-                          {(r.pg ?? r.win) ?? 0}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {(r.pe ?? r.draw) ?? 0}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {(r.pp ?? r.loss) ?? 0}
-                        </td>
-                        <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                        <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                        <td className="py-2 pr-3">
-                          {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
-                        </td>
-                        <td className="py-2 pr-3 font-medium">
-                          {r.pts ?? r.points ?? 0}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
         </section>
       </main>
 
