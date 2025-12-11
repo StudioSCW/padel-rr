@@ -422,8 +422,8 @@ export default function App() {
     commitRounds();
     commitCourts();
     if (mode === MODES.TEAMS) {
-      // Generamos el plan completo (m-1 rondas) usando round-robin
-      const basePlan = generateTeamRoundRobin(teams); // n-1 jornadas
+      // Generamos el plan completo (m-1 rondas)
+      const basePlan = generateTeamRoundRobin(teams); // m-1 rondas
       if (!basePlan || basePlan.length === 0) {
         setSchedule([]);
         setTeamPlan(null);
@@ -431,18 +431,23 @@ export default function App() {
         return;
       }
 
-      // Queremos N "bloques de tiempo" (rondas de UI)
+      // Queremos N rondas (valor pedido por el usuario en `rounds`).
+      // Si rounds > fullPlan.length repetimos ciclos hasta cubrirlo.
       const needed = rounds;
       const extended: any[] = [];
 
-      // Repetimos el plan las veces necesarias para llegar a N rondas,
-      // rotando ligeramente los partidos por ciclo para que no se vea igual.
+      // Opción: si quieres que las repeticiones no sean idénticas,
+      // aquí introducimos una ligera rotación de los pairings por cada ciclo.
+      // (Si NO quieres rotación, reemplaza la lógica dentro del for por extended.push(...fullPlan))
       const cycles = Math.ceil(needed / basePlan.length);
       for (let c = 0; c < cycles; c++) {
         for (let r = 0; r < basePlan.length; r++) {
           if (extended.length >= needed) break;
 
+          // tomamos una copia de la ronda original
           const originalPairings = basePlan[r];
+          // rotamos el orden de pairings por ciclo c (esto solo cambia el orden en que se muestran los cruces,
+          // no los enfrentamientos en sí — pero ayuda a que la segunda vuelta no luzca exactamente igual)
           const rotated = originalPairings.map((_, idx) => {
             const newIdx = (idx + c) % originalPairings.length;
             return originalPairings[newIdx];
@@ -465,8 +470,7 @@ export default function App() {
           ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
         );
 
-        // Elegimos los partidos que caben en las canchas,
-        // priorizando equipos con menos PJ
+        // Elegimos los partidos que caben en las canchas, priorizando equipos con menos PJ
         const chosen = pickBalancedMatches(playable, courts, gamesCount);
 
         return chosen.map(([A, B]: any[]) => ({
