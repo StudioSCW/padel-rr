@@ -336,6 +336,27 @@ export default function App() {
   useEffect(() => {
     setStandings(computeStandings(mode, schedule, players, teams));
   }, [schedule, mode, players, teams]);
+  // Resumen para mostrar arriba de la tabla general (modo, equipos, rondas, etc.)
+  const gamesBalanceInfo = useMemo(() => {
+    // Solo aplica a modo Equipos fijos
+    if (mode !== MODES.TEAMS || teams.length === 0 || schedule.length === 0) {
+      return null;
+    }
+
+    // Usamos el helper que ya tienes para contar partidos jugados por equipo
+    const gamesCount = buildGamesCountFromSchedule(teams, schedule, MODES.TEAMS);
+
+    let min = Infinity;
+    let max = -Infinity;
+
+    gamesCount.forEach((pj) => {
+      if (pj < min) min = pj;
+      if (pj > max) max = pj;
+    });
+
+    if (!isFinite(min) || !isFinite(max)) return null;
+    return { min, max };
+  }, [mode, teams, schedule]);
 
   const canGenerate = useMemo(() => {
     if (mode === MODES.INDIVIDUAL)
@@ -778,7 +799,6 @@ export default function App() {
               </p>
             </div>
 
-
             {mode === MODES.INDIVIDUAL ? (
               <div className="space-y-3">
                 <div className="flex items-end gap-2">
@@ -1089,6 +1109,40 @@ export default function App() {
               >
                 Descargar resultados
               </button>
+            </div>
+
+            {/* Resumen rápido de configuración y equilibrio de partidos */}
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                {mode === MODES.TEAMS
+                  ? `Equipos: ${teams.length}`
+                  : `Jugadores: ${players.length}`}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                Rondas generadas: {schedule.length}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                Canchas: {courts}
+              </span>
+
+              {mode === MODES.TEAMS && gamesBalanceInfo && (
+                <span
+                  className={
+                    "inline-flex items-center rounded-full px-2 py-0.5 border " +
+                    (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                      ? "border-amber-300 bg-amber-50 text-amber-700"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700")
+                  }
+                >
+                  PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+                </span>
+              )}
             </div>
 
             {standings.length === 0 ? (
