@@ -879,7 +879,6 @@ export default function App() {
                 </div>
               )}
 
-
               <div className="pt-2 flex gap-2">
                 <button
                   disabled={!canGenerate}
