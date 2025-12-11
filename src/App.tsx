@@ -1101,96 +1101,92 @@ export default function App() {
 
           {/* ===== Tabla General + Export ===== */}
           <div className="bg-white rounded-2xl shadow p-4 mt-6">
+            {/* Header solo con el título */}
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Tabla general</h2>
+            </div>
 
-              {/* Resumen rápido de configuración y equilibrio de partidos */}
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+            {/* Resumen rápido de configuración y equilibrio de partidos */}
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                {mode === MODES.TEAMS
+                  ? `Equipos: ${teams.length}`
+                  : `Jugadores: ${players.length}`}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                Rondas generadas: {schedule.length}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                Canchas: {courts}
+              </span>
+
+              {mode === MODES.TEAMS && gamesBalanceInfo && (
+                <span
+                  className={
+                    "inline-flex items-center rounded-full px-2 py-0.5 border " +
+                    (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                      ? "border-amber-300 bg-amber-50 text-amber-700"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700")
+                  }
+                >
+                  PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
                 </span>
-
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  {mode === MODES.TEAMS
-                    ? `Equipos: ${teams.length}`
-                    : `Jugadores: ${players.length}`}
-                </span>
-
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  Rondas generadas: {schedule.length}
-                </span>
-
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  Canchas: {courts}
-                </span>
-
-                {mode === MODES.TEAMS && gamesBalanceInfo && (
-                  <span
-                    className={
-                      "inline-flex items-center rounded-full px-2 py-0.5 border " +
-                      (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
-                        ? "border-amber-300 bg-amber-50 text-amber-700"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-700")
-                    }
-                  >
-                    PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
-                  </span>
-                )}
-              </div>
-
-              {standings.length === 0 ? (
-                <div className="text-sm text-slate-500">
-                  Juega o genera rondas para ver la tabla.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-left text-slate-500">
-                      <tr>
-                        <th className="py-2 pr-3">Pos</th>
-                        <th className="py-2 pr-3">Nombre</th>
-                        <th className="py-2 pr-3">PJ</th>
-                        <th className="py-2 pr-3">PG</th>
-                        <th className="py-2 pr-3">PE</th>
-                        <th className="py-2 pr-3">PP</th>
-                        <th className="py-2 pr-3">GF</th>
-                        <th className="py-2 pr-3">GC</th>
-                        <th className="py-2 pr-3">DG</th>
-                        <th className="py-2 pr-3">Pts</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {standings.map((r: any, i: number) => (
-                        <tr key={r.id ?? r.name} className="border-t">
-                          <td className="py-2 pr-3">{i + 1}</td>
-                          <td className="py-2 pr-3">
-                            {r.name ?? r.teamName ?? "—"}
-                          </td>
-                          <td className="py-2 pr-3">{r.pj ?? 0}</td>
-                          <td className="py-2 pr-3">
-                            {(r.pg ?? r.win) ?? 0}
-                          </td>
-                          <td className="py-2 pr-3">
-                            {(r.pe ?? r.draw) ?? 0}
-                          </td>
-                          <td className="py-2 pr-3">
-                            {(r.pp ?? r.loss) ?? 0}
-                          </td>
-                          <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                          <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                          <td className="py-2 pr-3">
-                            {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
-                          </td>
-                          <td className="py-2 pr-3 font-medium">
-                            {r.pts ?? r.points ?? 0}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               )}
             </div>
+
+            {standings.length === 0 ? (
+              <div className="text-sm text-slate-500">
+                Juega o genera rondas para ver la tabla.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="text-left text-slate-500">
+                    <tr>
+                      <th className="py-2 pr-3">Pos</th>
+                      <th className="py-2 pr-3">Nombre</th>
+                      <th className="py-2 pr-3">PJ</th>
+                      <th className="py-2 pr-3">PG</th>
+                      <th className="py-2 pr-3">PE</th>
+                      <th className="py-2 pr-3">PP</th>
+                      <th className="py-2 pr-3">GF</th>
+                      <th className="py-2 pr-3">GC</th>
+                      <th className="py-2 pr-3">DG</th>
+                      <th className="py-2 pr-3">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((r: any, i: number) => (
+                      <tr key={r.id ?? r.name} className="border-t">
+                        <td className="py-2 pr-3">{i + 1}</td>
+                        <td className="py-2 pr-3">
+                          {r.name ?? r.teamName ?? "—"}
+                        </td>
+                        <td className="py-2 pr-3">{r.pj ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                        <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                        <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                        <td className="py-2 pr-3">
+                          {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
+                        </td>
+                        <td className="py-2 pr-3 font-medium">
+                          {r.pts ?? r.points ?? 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </section>
       </main>
 
