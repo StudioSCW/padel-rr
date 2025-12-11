@@ -704,8 +704,8 @@ export default function App() {
                   setMode(MODES.INDIVIDUAL);
                 }}
                 className={`px-3 py-1.5 rounded-xl border ${mode === MODES.INDIVIDUAL
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-900 border-slate-300"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-900 border-slate-300"
                   }`}
               >
                 Individual
@@ -717,8 +717,8 @@ export default function App() {
                   setMode(MODES.TEAMS);
                 }}
                 className={`px-3 py-1.5 rounded-xl border ${mode === MODES.TEAMS
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-900 border-slate-300"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-900 border-slate-300"
                   }`}
               >
                 Equipos fijos
@@ -753,17 +753,31 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
+              {/* Nuevo torneo completo (borra todo) */}
               <button
-                onClick={newTournament}
+                onClick={() => newTournament({ hardResetPlayersTeams: true })}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white"
               >
                 <PlayCircle className="w-4 h-4" />
-                Nuevo torneo
+                Nuevo torneo (todo)
               </button>
+
+              {/* Solo resetear calendario y resultados, manteniendo jugadores/equipos */}
+              <button
+                onClick={() => newTournament({ hardResetPlayersTeams: false })}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-indigo-200 text-indigo-700 bg-indigo-50"
+              >
+                <Shuffle className="w-4 h-4" />
+                Reiniciar calendario
+              </button>
+
               <p className="text-xs text-slate-500">
-                Reinicia el torneo con un nuevo calendario y estadísticas.
+                <b>Nuevo torneo (todo):</b> borra jugadores, equipos, calendario y tabla.
+                <br />
+                <b>Reiniciar calendario:</b> genera un nuevo calendario manteniendo los equipos.
               </p>
             </div>
+
 
             {mode === MODES.INDIVIDUAL ? (
               <div className="space-y-3">
