@@ -743,6 +743,7 @@ export default function App() {
               </div>
 
               {mode === MODES.INDIVIDUAL ? (
+                /* ===== MODO INDIVIDUAL: gestión de jugadores ===== */
                 <div className="space-y-3">
                   <div className="flex items-end gap-2">
                     <label className="flex-1 text-sm">
@@ -764,6 +765,7 @@ export default function App() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">Jugadores: {players.length}</span>
                     <button
@@ -773,6 +775,7 @@ export default function App() {
                       <Trash2 className="w-4 h-4" /> Limpiar todo
                     </button>
                   </div>
+
                   <ul className="max-h-48 overflow-auto divide-y border rounded-xl">
                     {players.map((p) => (
                       <li key={p.id} className="px-3 py-2 flex items-center justify-between">
@@ -788,6 +791,7 @@ export default function App() {
                   </ul>
                 </div>
               ) : (
+                /* ===== MODO EQUIPOS FIJOS: equipos / parejas ===== */
                 <div className="space-y-4">
                   {/* Formulario para agregar equipos/parejas manualmente */}
                   <div className="space-y-2">
@@ -851,7 +855,10 @@ export default function App() {
                     )}
                     <ul className="space-y-2 max-h-48 overflow-auto pr-1">
                       {teams.map((t) => (
-                        <li key={t.id} className="border rounded-xl p-2 flex items-center justify-between gap-2">
+                        <li
+                          key={t.id}
+                          className="border rounded-xl p-2 flex items-center justify-between gap-2"
+                        >
                           <div>
                             <div className="font-medium text-sm">{t.name}</div>
                             <div className="text-xs text-slate-600">
@@ -871,6 +878,7 @@ export default function App() {
                   </div>
                 </div>
               )}
+
 
               <div className="pt-2 flex gap-2">
                 <button
