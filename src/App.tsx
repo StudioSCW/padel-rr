@@ -723,18 +723,28 @@ export default function App() {
         schedule,
       };
 
+      console.log("Enviando a Sheets payload:", payload);
+
       const res = await fetch(SHEETS_SYNC_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // Opcional: leer respuesta
-      // const data = await res.json();
+      const text = await res.text(); // leemos SIEMPRE la respuesta como texto
+      console.log("Sheets response status:", res.status);
+      console.log("Sheets response body:", text);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} – ${text}`);
+      }
+
+      // si tu Apps Script devuelve JSON, puedes intentar parsearlo:
+      // const data = JSON.parse(text);
+
       alert("Resultados enviados a Google Sheets ✅");
     } catch (err) {
-      console.error(err);
+      console.error("Error al enviar a Google Sheets:", err);
       alert("Hubo un problema al enviar los datos a Google Sheets 😕");
     }
   }
