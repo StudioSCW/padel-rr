@@ -550,6 +550,33 @@ export default function App() {
     );
   }
 
+  function resetRoundScores(rIdx: number) {
+    setSchedule((prev: any[]) =>
+      prev.map((round: any, i: number) => {
+        if (i !== rIdx) return round;
+
+        if (mode === MODES.TEAMS) {
+          // TEAMS: round es un array de partidos
+          return round.map((m: any) => ({
+            ...m,
+            scoreA: 0,
+            scoreB: 0,
+          }));
+        } else {
+          // INDIVIDUAL: round = { matches, resting }
+          return {
+            ...round,
+            matches: round.matches.map((m: any) => ({
+              ...m,
+              scoreA: 0,
+              scoreB: 0,
+            })),
+          };
+        }
+      })
+    );
+  }
+
   function randomizeNextRound() {
     commitRounds();
     commitCourts();
@@ -996,17 +1023,25 @@ export default function App() {
                     <div key={rIdx} className="border rounded-2xl p-3">
                       <div className="flex items-center justify-between mb-3">
                         <div className="font-semibold">Ronda {rIdx + 1}</div>
-                        <button
-                          onClick={() =>
-                            setSchedule((prev: any[]) =>
-                              prev.filter((_, i) => i !== rIdx)
-                            )
-                          }
-                          className="text-slate-400 hover:text-red-600"
-                          title="Eliminar ronda"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => resetRoundScores(rIdx)}
+                            className="text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                          >
+                            Reiniciar marcadores
+                          </button>
+                          <button
+                            onClick={() =>
+                              setSchedule((prev: any[]) =>
+                                prev.filter((_, i) => i !== rIdx)
+                              )
+                            }
+                            className="text-slate-400 hover:text-red-600"
+                            title="Eliminar ronda"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid md:grid-cols-2 gap-3">
