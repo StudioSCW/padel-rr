@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 /**
- * Padel Round Robin – Velno Edition
+ * Padel Round Robin
  * - Individual (parejas rotativas) y Equipos fijos (round-robin clásico)
  * - Rondas, canchas, marcadores, tabla general (3/1/0)
  * - Persistencia local
@@ -205,6 +205,7 @@ function generateIndividualSchedule(
         teamB: bestQuad.p[1].map((p: any) => p),
         scoreA: 0,
         scoreB: 0,
+        played: false,
         id: uid(),
       };
 
@@ -506,6 +507,7 @@ export default function App() {
           teamIdB: B.id,
           scoreA: 0,
           scoreB: 0,
+          played: false,
         }));
       });
 
@@ -536,19 +538,45 @@ export default function App() {
         if (i !== rIdx) return round;
         if (mode === MODES.TEAMS) {
           return round.map((m: any, j: number) =>
-            j !== mIdx ? m : { ...m, [field]: v }
+            j !== mIdx ? m : { ...m, [field]: v, played: true }
           );
         } else {
           return {
             ...round,
             matches: round.matches.map((m: any, j: number) =>
-              j !== mIdx ? m : { ...m, [field]: v }
+              j !== mIdx ? m : { ...m, [field]: v, played: true }
             ),
           };
         }
       })
     );
   }
+
+  function resetTable() {
+    setSchedule((prev: any[]) =>
+      prev.map((round: any) => {
+        if (mode === MODES.TEAMS) {
+          return round.map((m: any) => ({
+            ...m,
+            scoreA: 0,
+            scoreB: 0,
+            played: false,
+          }));
+        } else {
+          return {
+            ...round,
+            matches: round.matches.map((m: any) => ({
+              ...m,
+              scoreA: 0,
+              scoreB: 0,
+              played: false,
+            })),
+          };
+        }
+      })
+    );
+  }
+
 
   function resetRoundScores(rIdx: number) {
     setSchedule((prev: any[]) =>
@@ -622,6 +650,7 @@ export default function App() {
         teamIdB: B.id,
         scoreA: 0,
         scoreB: 0,
+        played: false
       }));
 
       setSchedule((prev: any[]) => [...prev, schedRound]);
@@ -652,6 +681,7 @@ export default function App() {
       teamIdB: B.id,
       scoreA: 0,
       scoreB: 0,
+      played: false
     }));
 
     setSchedule((prev: any[]) => [...prev, schedRound]);
@@ -1136,10 +1166,30 @@ export default function App() {
 
           {/* ===== Tabla General + Export ===== */}
           <div className="bg-white rounded-2xl shadow p-4 mt-6">
-            {/* Header solo con el título */}
+
+            {/* Header: título + acciones */}
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Tabla general</h2>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={resetTable}
+                  className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
+                  title="Reinicia todos los marcadores y deja la tabla en cero"
+                >
+                  Reiniciar tabla
+                </button>
+
+                <button
+                  onClick={exportStandingsCSV}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-sm"
+                  title="Descarga la tabla general en CSV"
+                >
+                  Descargar CSV
+                </button>
+              </div>
             </div>
+
 
             {/* Resumen rápido de configuración y equilibrio de partidos */}
             <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -1290,6 +1340,8 @@ function computeStandings(
   schedule.forEach((round: any) => {
     const matches = mode === MODES.TEAMS ? round : round.matches;
     matches.forEach((m: any) => {
+      if (!m.played) return;
+
       const aGF = m.scoreA || 0;
       const bGF = m.scoreB || 0;
 
