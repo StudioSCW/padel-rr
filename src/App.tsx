@@ -696,6 +696,7 @@ export default function App() {
     const headers = [
       "Pos",
       "Nombre",
+      "PA",
       "PJ",
       "PG",
       "PE",
@@ -708,6 +709,7 @@ export default function App() {
     const rows = standings.map((r: any, i: number) => [
       i + 1,
       r.name ?? r.teamName ?? "—",
+      r.pa ?? 0,
       r.pj ?? 0,
       r.pg ?? r.win ?? 0,
       r.pe ?? r.draw ?? 0,
@@ -1257,8 +1259,8 @@ export default function App() {
               disabled={!schedule || schedule.length === 0}
               onClick={exportScheduleCSV}
               className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                ? "bg-slate-900 text-white"
+                : "bg-slate-200 text-slate-500 cursor-not-allowed"
                 }`}
             >
               Descargar calendario (CSV)
@@ -1309,6 +1311,7 @@ export default function App() {
                     <tr>
                       <th className="py-2 pr-3">Pos</th>
                       <th className="py-2 pr-3">Nombre</th>
+                      <th className="py-2 pr-3">PA</th>
                       <th className="py-2 pr-3">PJ</th>
                       <th className="py-2 pr-3">PG</th>
                       <th className="py-2 pr-3">PE</th>
@@ -1326,6 +1329,7 @@ export default function App() {
                         <td className="py-2 pr-3">
                           {r.name ?? r.teamName ?? "—"}
                         </td>
+                        <td className="py-2 pr-3">{r.pa ?? 0}</td>
                         <td className="py-2 pr-3">{r.pj ?? 0}</td>
                         <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
                         <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
@@ -1394,6 +1398,7 @@ function computeStandings(
       table.set(id, {
         id,
         name,
+        pa: 0,
         pj: 0,
         pg: 0,
         pe: 0,
@@ -1409,6 +1414,29 @@ function computeStandings(
   } else {
     teams.forEach((t) => addRow(t.id, t.name));
   }
+
+  // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
+  const assured = new Map<string, number>();
+
+  const incAssured = (id: string) => {
+    assured.set(id, (assured.get(id) || 0) + 1);
+  };
+
+  schedule.forEach((round: any) => {
+    const matches = mode === MODES.TEAMS ? round : round.matches;
+    (matches || []).forEach((m: any) => {
+      if (mode === MODES.INDIVIDUAL) {
+        // cada jugador tiene 1 partido asegurado por match
+        for (const p of m.teamA || []) incAssured(p.id);
+        for (const p of m.teamB || []) incAssured(p.id);
+      } else {
+        const teamAId = m.teamIdA || teamKey(m.teamA);
+        const teamBId = m.teamIdB || teamKey(m.teamB);
+        if (teamAId) incAssured(teamAId);
+        if (teamBId) incAssured(teamBId);
+      }
+    });
+  });
 
   schedule.forEach((round: any) => {
     const matches = mode === MODES.TEAMS ? round : round.matches;
