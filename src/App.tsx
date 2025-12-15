@@ -335,8 +335,17 @@ export default function App() {
   }, [mode, players, teams, rounds, courts, schedule, history, tournamentId]);
 
   useEffect(() => {
-    setStandings(computeStandings(mode, schedule, players, teams));
+    const base = computeStandings(mode, schedule, players, teams);
+    const paMap = computePA(mode, schedule, players, teams);
+
+    const withPA = base.map((r: any) => ({
+      ...r,
+      pa: paMap.get(r.id) || 0,
+    }));
+
+    setStandings(withPA);
   }, [schedule, mode, players, teams]);
+
   // Resumen para mostrar arriba de la tabla general (modo, equipos, rondas, etc.)
   const gamesBalanceInfo = useMemo(() => {
     // Solo aplica a modo Equipos fijos
@@ -1310,6 +1319,7 @@ export default function App() {
                     <tr>
                       <th className="py-2 pr-3">Pos</th>
                       <th className="py-2 pr-3">Nombre</th>
+                      <th className="py-2 pr-3">PA</th>
                       <th className="py-2 pr-3">PJ</th>
                       <th className="py-2 pr-3">PG</th>
                       <th className="py-2 pr-3">PE</th>
@@ -1327,6 +1337,7 @@ export default function App() {
                         <td className="py-2 pr-3">
                           {r.name ?? r.teamName ?? "—"}
                         </td>
+                        <td className="py-2 pr-3 font-medium">{r.pa ?? 0}</td>
                         <td className="py-2 pr-3">{r.pj ?? 0}</td>
                         <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
                         <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
@@ -1466,6 +1477,41 @@ function computeStandings(
       (y.gf - y.gc) - (x.gf - x.gc) ||
       y.gf - x.gf
   );
+}
+
+function computePA(
+  mode: string,
+  schedule: any[],
+  players: any[],
+  teams: any[]
+) {
+  const map = new Map<string, number>();
+
+  if (mode === MODES.INDIVIDUAL) {
+    players.forEach((p) => map.set(p.id, 0));
+  } else {
+    teams.forEach((t) => map.set(t.id, 0));
+  }
+
+  schedule.forEach((round: any) => {
+    const matches = mode === MODES.TEAMS ? round : round.matches;
+
+    (matches || []).forEach((m: any) => {
+      if (mode === MODES.TEAMS) {
+        if (m.teamIdA) map.set(m.teamIdA, (map.get(m.teamIdA) || 0) + 1);
+        if (m.teamIdB) map.set(m.teamIdB, (map.get(m.teamIdB) || 0) + 1);
+      } else {
+        m.teamA.forEach((p: any) =>
+          map.set(p.id, (map.get(p.id) || 0) + 1)
+        );
+        m.teamB.forEach((p: any) =>
+          map.set(p.id, (map.get(p.id) || 0) + 1)
+        );
+      }
+    });
+  });
+
+  return map;
 }
 
 function teamKey(players: any[]) {
