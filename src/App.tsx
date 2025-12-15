@@ -1261,39 +1261,48 @@ export default function App() {
                   <tbody>
                     {standings.map((r: any, i: number) => (
                       <tr key={r.id ?? r.name} className="border-t">
-                        <td className="py-2 pr-3">{i + 1}</td>
-                        <td className="py-2 pr-3">
-                          {r.name ?? r.teamName ?? "—"}
+                        {standings.map((r: any, i: number) => {
                           const pa = r.pa ?? 0;
                           const pj = r.pj ?? 0;
                           const faltan = Math.max(0, pa - pj);
-                        </td>
-                        <td className="py-2 pr-3">{r.pa ?? 0}</td>
 
-                        <td className="py-2 pr-3">
-                          {faltan > 0 ? (
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 border border-amber-300 bg-amber-50 text-amber-700 text-xs">
-                              Faltan {faltan}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs">
-                              Completado
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3">{r.pj ?? 0}</td>
-                        <td className="py-2 pr-3">{r.pj ?? 0}</td>
-                        <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
-                        <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
-                        <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                        <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                        <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                        <td className="py-2 pr-3">
-                          {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
-                        </td>
-                        <td className="py-2 pr-3 font-medium">
-                          {r.pts ?? r.points ?? 0}
-                        </td>
+                          return (
+                            <tr key={r.id ?? r.name} className="border-t">
+                              <td className="py-2 pr-3">{i + 1}</td>
+
+                              <td className="py-2 pr-3">
+                                {r.name ?? r.teamName ?? "—"}
+                              </td>
+
+                              <td className="py-2 pr-3">{pa}</td>
+
+                              <td className="py-2 pr-3">
+                                {faltan > 0 ? (
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 border border-amber-300 bg-amber-50 text-amber-700 text-xs">
+                                    Faltan {faltan}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs">
+                                    Completado
+                                  </span>
+                                )}
+                              </td>
+
+                              <td className="py-2 pr-3">{pj}</td>
+                              <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                              <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                              <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                              <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                              <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                              <td className="py-2 pr-3">
+                                {(r.gf ?? 0) - (r.gc ?? 0)}
+                              </td>
+                              <td className="py-2 pr-3 font-medium">
+                                {r.pts ?? r.points ?? 0}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
