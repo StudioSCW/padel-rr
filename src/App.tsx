@@ -1242,7 +1242,7 @@ export default function App() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="text-left text-slate-500">
+                  <thead className="text-left text-slate-500 text-sm">
                     <tr>
                       <th className="py-2 pr-3">Pos</th>
                       <th className="py-2 pr-3">Nombre</th>
@@ -1259,48 +1259,54 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {standings.map((r: any, i: number) => (
-                      <tr key={r.id ?? r.name} className="border-t">
-                        {standings.map((r: any, i: number) => {
-                          const pa = r.pa ?? 0;
-                          const pj = r.pj ?? 0;
-                          const faltan = Math.max(0, pa - pj);
+                    {standings.map((r: any, i: number) => {
+                      const pa = r.pa ?? 0;
+                      const pj = r.pj ?? 0;
+                      const faltan = Math.max(0, pa - pj);
 
-                          return (
-                            <tr key={r.id ?? r.name} className="border-t">
-                              <td className="py-2 pr-3">{i + 1}</td>
-                              <td className="py-2 pr-3">
-                                {r.name ?? r.teamName ?? "—"}
-                              </td>
-                              <td className="py-2 pr-3 text-slate-400 text-sm">{pa}</td>
-                              <td className="py-2 pr-3 text-center">
-                                {faltan > 0 ? (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
-                                    {faltan}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
-                                    ✓
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-2 pr-3">{pj}</td>
-                              <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
-                              <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
-                              <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                              <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                              <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                              <td className="py-2 pr-3">
-                                {(r.gf ?? 0) - (r.gc ?? 0)}
-                              </td>
-                              <td className="py-2 pr-3 font-medium">
-                                {r.pts ?? r.points ?? 0}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                      return (
+                        <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
+                          <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
+
+                          <td className="py-2 pr-3 font-medium">
+                            {r.name ?? r.teamName ?? "—"}
+                          </td>
+
+                          {/* PA (discreto) */}
+                          <td className="py-2 pr-3 text-slate-400 text-sm">
+                            {pa}
+                          </td>
+
+                          {/* ⏳ Faltan (minimal) */}
+                          <td className="py-2 pr-3 text-center">
+                            {faltan > 0 ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                {faltan}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                ✓
+                              </span>
+                            )}
+                          </td>
+
+                          {/* PJ */}
+                          <td className="py-2 pr-3">{pj}</td>
+
+                          <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                          <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                          <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                          <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                          <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                          <td className="py-2 pr-3 text-slate-600">
+                            {(r.gf ?? 0) - (r.gc ?? 0)}
+                          </td>
+                          <td className="py-2 pr-3 font-semibold">
+                            {r.pts ?? r.points ?? 0}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
