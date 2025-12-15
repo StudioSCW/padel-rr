@@ -1244,148 +1244,158 @@ export default function App() {
                 </button>
 
                 <button
-                  disabled={!schedule || schedule.length === 0}
-                  onClick={exportScheduleCSV}
-                  className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    }`}
+                  onClick={exportStandingsCSV}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-sm"
+                  title="Descarga la tabla general en CSV"
                 >
-                  Descargar calendario
+                  Descargar CSV
                 </button>
-
-
-                {/* Resumen rápido de configuración y equilibrio de partidos */}
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    {mode === MODES.TEAMS
-                      ? `Equipos: ${teams.length}`
-                      : `Jugadores: ${players.length}`}
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    Rondas generadas: {schedule.length}
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    Canchas: {courts}
-                  </span>
-
-                  {mode === MODES.TEAMS && gamesBalanceInfo && (
-                    <span
-                      className={
-                        "inline-flex items-center rounded-full px-2 py-0.5 border " +
-                        (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
-                          ? "border-amber-300 bg-amber-50 text-amber-700"
-                          : "border-emerald-200 bg-emerald-50 text-emerald-700")
-                      }
-                    >
-                      PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
-                    </span>
-                  )}
-                </div>
-
-                {standings.length === 0 ? (
-                  <div className="text-sm text-slate-500">
-                    Juega o genera rondas para ver la tabla.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="text-left text-slate-500">
-                        <tr>
-                          <th className="py-2 pr-3">Pos</th>
-                          <th className="py-2 pr-3">Nombre</th>
-                          <th className="py-2 pr-3">PJ</th>
-                          <th className="py-2 pr-3">PG</th>
-                          <th className="py-2 pr-3">PE</th>
-                          <th className="py-2 pr-3">PP</th>
-                          <th className="py-2 pr-3">GF</th>
-                          <th className="py-2 pr-3">GC</th>
-                          <th className="py-2 pr-3">DG</th>
-                          <th className="py-2 pr-3">Pts</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {standings.map((r: any, i: number) => (
-                          <tr key={r.id ?? r.name} className="border-t">
-                            <td className="py-2 pr-3">{i + 1}</td>
-                            <td className="py-2 pr-3">
-                              {r.name ?? r.teamName ?? "—"}
-                            </td>
-                            <td className="py-2 pr-3">{r.pj ?? 0}</td>
-                            <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
-                            <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
-                            <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                            <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                            <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                            <td className="py-2 pr-3">
-                              {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
-                            </td>
-                            <td className="py-2 pr-3 font-medium">
-                              {r.pts ?? r.points ?? 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
               </div>
-            </section>
-          </main>
+            </div>
 
-          <footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
-            Padel Round Robin by Velno – ABR
-          </footer>
-        </div>
-        );
+            <button
+              disabled={!schedule || schedule.length === 0}
+              onClick={exportScheduleCSV}
+              className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
+                ? "bg-slate-900 text-white"
+                : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                }`}
+            >
+              Descargar calendario (CSV)
+            </button>
+
+
+            {/* Resumen rápido de configuración y equilibrio de partidos */}
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                {mode === MODES.TEAMS
+                  ? `Equipos: ${teams.length}`
+                  : `Jugadores: ${players.length}`}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                Rondas generadas: {schedule.length}
+              </span>
+
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                Canchas: {courts}
+              </span>
+
+              {mode === MODES.TEAMS && gamesBalanceInfo && (
+                <span
+                  className={
+                    "inline-flex items-center rounded-full px-2 py-0.5 border " +
+                    (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                      ? "border-amber-300 bg-amber-50 text-amber-700"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700")
+                  }
+                >
+                  PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+                </span>
+              )}
+            </div>
+
+            {standings.length === 0 ? (
+              <div className="text-sm text-slate-500">
+                Juega o genera rondas para ver la tabla.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="text-left text-slate-500">
+                    <tr>
+                      <th className="py-2 pr-3">Pos</th>
+                      <th className="py-2 pr-3">Nombre</th>
+                      <th className="py-2 pr-3">PJ</th>
+                      <th className="py-2 pr-3">PG</th>
+                      <th className="py-2 pr-3">PE</th>
+                      <th className="py-2 pr-3">PP</th>
+                      <th className="py-2 pr-3">GF</th>
+                      <th className="py-2 pr-3">GC</th>
+                      <th className="py-2 pr-3">DG</th>
+                      <th className="py-2 pr-3">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((r: any, i: number) => (
+                      <tr key={r.id ?? r.name} className="border-t">
+                        <td className="py-2 pr-3">{i + 1}</td>
+                        <td className="py-2 pr-3">
+                          {r.name ?? r.teamName ?? "—"}
+                        </td>
+                        <td className="py-2 pr-3">{r.pj ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                        <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                        <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                        <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                        <td className="py-2 pr-3">
+                          {r.dg ?? (r.gf ?? 0) - (r.gc ?? 0)}
+                        </td>
+                        <td className="py-2 pr-3 font-medium">
+                          {r.pts ?? r.points ?? 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+
+      <footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+        Padel Round Robin by Velno – ABR
+      </footer>
+    </div>
+  );
 }
 
-        function TeamLabel({team, nameOverride}: any) {
+function TeamLabel({ team, nameOverride }: any) {
   return (
-        <div className="flex items-center gap-2 py-1">
-          <div className="flex -space-x-2">
-            {team.map((p: any) => (
-              <div
-                key={p.id}
-                title={p.name}
-                className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
-              >
-                {initials(p.name)}
-              </div>
-            ))}
+    <div className="flex items-center gap-2 py-1">
+      <div className="flex -space-x-2">
+        {team.map((p: any) => (
+          <div
+            key={p.id}
+            title={p.name}
+            className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
+          >
+            {initials(p.name)}
           </div>
-          <div className="text-sm">
-            {nameOverride || team.map((p: any) => p.name).join(" + ")}
-          </div>
-        </div>
-        );
+        ))}
+      </div>
+      <div className="text-sm">
+        {nameOverride || team.map((p: any) => p.name).join(" + ")}
+      </div>
+    </div>
+  );
 }
 
-        function initials(name: string) {
+function initials(name: string) {
   const parts = name.trim().split(/\s+/);
-        return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+  return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
 }
 
-        function computeStandings(
-        mode: string,
-        schedule: any[],
-        players: any[],
-        teams: any[]
-        ) {
+function computeStandings(
+  mode: string,
+  schedule: any[],
+  players: any[],
+  teams: any[]
+) {
   const table = new Map<string, any>();
 
   const addRow = (id: string, name: string) => {
     if (!table.has(id))
-        table.set(id, {
-          id,
-          name,
-          pj: 0,
+      table.set(id, {
+        id,
+        name,
+        pj: 0,
         pg: 0,
         pe: 0,
         pp: 0,
@@ -1395,10 +1405,10 @@ export default function App() {
       });
   };
 
-        if (mode === MODES.INDIVIDUAL) {
-          players.forEach((p) => addRow(p.id, p.name));
+  if (mode === MODES.INDIVIDUAL) {
+    players.forEach((p) => addRow(p.id, p.name));
   } else {
-          teams.forEach((t) => addRow(t.id, t.name));
+    teams.forEach((t) => addRow(t.id, t.name));
   }
 
   schedule.forEach((round: any) => {
@@ -1406,20 +1416,20 @@ export default function App() {
     matches.forEach((m: any) => {
       if (!m.played) return;
 
-        const aGF = m.scoreA || 0;
-        const bGF = m.scoreB || 0;
+      const aGF = m.scoreA || 0;
+      const bGF = m.scoreB || 0;
 
-        if (mode === MODES.INDIVIDUAL) {
+      if (mode === MODES.INDIVIDUAL) {
         for (const p of m.teamA) addRow(p.id, p.name);
         for (const p of m.teamB) addRow(p.id, p.name);
         for (const p of m.teamA) upd(table, p.id, aGF, bGF);
         for (const p of m.teamB) upd(table, p.id, bGF, aGF);
         if (aGF > bGF) {
           for (const p of m.teamA) win(table, p.id);
-        for (const p of m.teamB) loss(table, p.id);
+          for (const p of m.teamB) loss(table, p.id);
         } else if (bGF > aGF) {
           for (const p of m.teamB) win(table, p.id);
-        for (const p of m.teamA) loss(table, p.id);
+          for (const p of m.teamA) loss(table, p.id);
         } else {
           for (const p of [...m.teamA, ...m.teamB]) draw(table, p.id);
         }
@@ -1438,73 +1448,73 @@ export default function App() {
         upd(table, teamBId, bGF, aGF);
         if (aGF > bGF) {
           win(table, teamAId);
-        loss(table, teamBId);
+          loss(table, teamBId);
         } else if (bGF > aGF) {
           win(table, teamBId);
-        loss(table, teamAId);
+          loss(table, teamAId);
         } else {
           draw(table, teamAId);
-        draw(table, teamBId);
+          draw(table, teamBId);
         }
       }
     });
   });
 
-        return Array.from(table.values()).sort(
+  return Array.from(table.values()).sort(
     (x, y) =>
-        y.pts - x.pts ||
-        (y.gf - y.gc) - (x.gf - x.gc) ||
-        y.gf - x.gf
-        );
+      y.pts - x.pts ||
+      (y.gf - y.gc) - (x.gf - x.gc) ||
+      y.gf - x.gf
+  );
 }
 
-        function teamKey(players: any[]) {
+function teamKey(players: any[]) {
   return players
     .map((p) => p.id)
-        .sort()
-        .join("_");
+    .sort()
+    .join("_");
 }
-        function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
+function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
   const r = table.get(id);
-        r.pj += 1;
-        r.gf += gf;
-        r.gc += gc;
-        table.set(id, r);
+  r.pj += 1;
+  r.gf += gf;
+  r.gc += gc;
+  table.set(id, r);
 }
-        function win(table: Map<string, any>, id: string) {
+function win(table: Map<string, any>, id: string) {
   const r = table.get(id);
-        r.pg += 1;
-        r.pts += 3;
-        table.set(id, r);
+  r.pg += 1;
+  r.pts += 3;
+  table.set(id, r);
 }
-        function draw(table: Map<string, any>, id: string) {
+function draw(table: Map<string, any>, id: string) {
   const r = table.get(id);
-        r.pe += 1;
-        r.pts += 1;
-        table.set(id, r);
+  r.pe += 1;
+  r.pts += 1;
+  table.set(id, r);
 }
-        function loss(table: Map<string, any>, id: string) {
+function loss(table: Map<string, any>, id: string) {
   const r = table.get(id);
-        r.pp += 1;
-        table.set(id, r);
+  r.pp += 1;
+  table.set(id, r);
 }
 
-        function CalendarIcon() {
+function CalendarIcon() {
   return (
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="text-slate-700"
-        >
-          <path
-            d="M7 2v3M17 2v3M4 11h16M4 7h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-        );
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="text-slate-700"
+    >
+      <path
+        d="M7 2v3M17 2v3M4 11h16M4 7h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
