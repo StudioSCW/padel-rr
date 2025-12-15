@@ -1102,12 +1102,10 @@ export default function App() {
               <div className="space-y-6">
                 {schedule.map((round: any, rIdx: number) => {
                   const matches =
-                    mode === MODES.TEAMS ? (round as any[]) : round.matches;
+                    (mode === MODES.TEAMS ? (round as any[]) : round.matches) || [];
 
                   const playingIds = new Set(
-                    matches
-                      .flatMap((m: any) => [m.teamIdA, m.teamIdB])
-                      .filter(Boolean)
+                    matches.flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
                   );
                   const restingTeams =
                     mode === MODES.TEAMS
@@ -1233,38 +1231,26 @@ export default function App() {
           <div className="bg-white rounded-2xl shadow p-4 mt-6">
 
             {/* Header: título + acciones */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold">Tabla general</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={resetTable}
+                className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
+                title="Reinicia todos los marcadores y deja la tabla en cero"
+              >
+                Reiniciar tabla
+              </button>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={resetTable}
-                  className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
-                  title="Reinicia todos los marcadores y deja la tabla en cero"
-                >
-                  Reiniciar tabla
-                </button>
-
-                <button
-                  onClick={exportStandingsCSV}
-                  className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-sm"
-                  title="Descarga la tabla general en CSV"
-                >
-                  Descargar CSV
-                </button>
-              </div>
+              <button
+                disabled={!schedule || schedule.length === 0}
+                onClick={exportScheduleCSV}
+                className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                  }`}
+              >
+                Descargar calendario (CSV)
+              </button>
             </div>
-
-            <button
-              disabled={!schedule || schedule.length === 0}
-              onClick={exportScheduleCSV}
-              className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
-                ? "bg-slate-900 text-white"
-                : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                }`}
-            >
-              Descargar calendario (CSV)
-            </button>
 
             {/* Resumen rápido de configuración y equilibrio de partidos */}
             <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -1440,7 +1426,7 @@ function computeStandings(
 
   schedule.forEach((round: any) => {
     const matches = mode === MODES.TEAMS ? round : round.matches;
-    matches.forEach((m: any) => {
+    (matches || []).forEach((m: any) => {
       if (!m.played) return;
 
       const aGF = m.scoreA || 0;
@@ -1485,6 +1471,11 @@ function computeStandings(
         }
       }
     });
+  });
+
+  // ✅ Asignar PA (Partidos Asegurados) a cada fila
+  table.forEach((row, id) => {
+    row.pa = assured.get(id) || 0;
   });
 
   return Array.from(table.values()).sort(
