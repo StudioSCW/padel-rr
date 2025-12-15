@@ -737,6 +737,69 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
 
+  function exportScheduleCSV() {
+    if (!schedule || schedule.length === 0) {
+      alert("No hay calendario para exportar todavía.");
+      return;
+    }
+
+    const headers = [
+      "Ronda",
+      "Cancha",
+      "Equipo A",
+      "Equipo B",
+      "Score A",
+      "Score B",
+      "Jugado",
+    ];
+
+    const rows: any[] = [];
+
+    schedule.forEach((round: any, rIdx: number) => {
+      const matches = mode === MODES.TEAMS ? (round as any[]) : round.matches;
+
+      (matches || []).forEach((m: any, mIdx: number) => {
+        const nameA =
+          m.teamNameA ||
+          (m.teamA ? m.teamA.map((p: any) => p.name).join(" + ") : "—");
+
+        const nameB =
+          m.teamNameB ||
+          (m.teamB ? m.teamB.map((p: any) => p.name).join(" + ") : "—");
+
+        rows.push([
+          rIdx + 1,
+          mIdx + 1,
+          nameA,
+          nameB,
+          m.scoreA ?? 0,
+          m.scoreB ?? 0,
+          m.played ? "SI" : "NO",
+        ]);
+      });
+    });
+
+    const lines = [headers, ...rows]
+      .map((cols) =>
+        cols
+          .map((v) => {
+            const s = String(v ?? "");
+            return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([lines], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const date = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `padel_calendario_${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function newTournament(opts: { hardResetPlayersTeams?: boolean } = {}) {
     const { hardResetPlayersTeams = true } = opts;
 
@@ -1189,6 +1252,17 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            <button
+              disabled={!schedule || schedule.length === 0}
+              onClick={exportScheduleCSV}
+              className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                }`}
+            >
+              Descargar calendario (CSV)
+            </button>
 
 
             {/* Resumen rápido de configuración y equilibrio de partidos */}
