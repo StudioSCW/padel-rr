@@ -688,57 +688,6 @@ export default function App() {
     setTeamRoundIdx((n) => n + 1);
   }
 
-  function exportStandingsCSV() {
-    if (!standings || standings.length === 0) {
-      alert("No hay resultados para exportar todavía.");
-      return;
-    }
-    const headers = [
-      "Pos",
-      "Nombre",
-      "PA",
-      "PJ",
-      "PG",
-      "PE",
-      "PP",
-      "GF",
-      "GC",
-      "DG",
-      "Pts",
-    ];
-    const rows = standings.map((r: any, i: number) => [
-      i + 1,
-      r.name ?? r.teamName ?? "—",
-      r.pa ?? 0,
-      r.pj ?? 0,
-      r.pg ?? r.win ?? 0,
-      r.pe ?? r.draw ?? 0,
-      r.pp ?? r.loss ?? 0,
-      r.gf ?? 0,
-      r.gc ?? 0,
-      r.dg ?? (r.gf ?? 0) - (r.gc ?? 0),
-      r.pts ?? r.points ?? 0,
-    ]);
-    const lines = [headers, ...rows]
-      .map((cols) =>
-        cols
-          .map((v) => {
-            const s = String(v ?? "");
-            return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-          })
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([lines], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const date = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `padel_resultados_${date}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   function exportScheduleCSV() {
     if (!schedule || schedule.length === 0) {
       alert("No hay calendario para exportar todavía.");
