@@ -446,6 +446,14 @@ export default function App() {
     setTeams((prev) => prev.filter((t) => t.id !== id));
   }
 
+  function updateTeamName(teamId: string, name: string) {
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === teamId ? { ...t, name: name.slice(0, 40) } : t
+      )
+    );
+  }
+
   function clearAll() {
     setPlayers([]);
     setTeams([]);
@@ -984,9 +992,13 @@ export default function App() {
                         key={t.id}
                         className="border rounded-xl p-2 flex items-center justify-between gap-2"
                       >
-                        <div>
-                          <div className="font-medium text-sm">{t.name}</div>
-                          <div className="text-xs text-slate-600">
+                        <div className="flex-1 min-w-0">
+                          <input
+                            value={t.name}
+                            onChange={(e) => updateTeamName(t.id, e.target.value)}
+                            className="w-full font-medium text-sm rounded-lg border border-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                          />
+                          <div className="text-xs text-slate-600 mt-1">
                             {t.players.map((p: any) => p.name).join(" · ")}
                           </div>
                         </div>
