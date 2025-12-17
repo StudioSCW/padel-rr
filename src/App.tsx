@@ -446,14 +446,6 @@ export default function App() {
     setTeams((prev) => prev.filter((t) => t.id !== id));
   }
 
-  function updateTeamName(teamId: string, name: string) {
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === teamId ? { ...t, name: name.slice(0, 40) } : t
-      )
-    );
-  }
-
   function clearAll() {
     setPlayers([]);
     setTeams([]);
@@ -992,13 +984,9 @@ export default function App() {
                         key={t.id}
                         className="border rounded-xl p-2 flex items-center justify-between gap-2"
                       >
-                        <div className="flex-1 min-w-0">
-                          <input
-                            value={t.name}
-                            onChange={(e) => updateTeamName(t.id, e.target.value)}
-                            className="w-full font-medium text-sm rounded-lg border border-slate-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                          />
-                          <div className="text-xs text-slate-600 mt-1">
+                        <div>
+                          <div className="font-medium text-sm">{t.name}</div>
+                          <div className="text-xs text-slate-600">
                             {t.players.map((p: any) => p.name).join(" · ")}
                           </div>
                         </div>
@@ -1278,9 +1266,18 @@ export default function App() {
 
                       return (
                         <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
-                          <td className="py-2 pr-3 font-medium">{i + 1}</td>
-                          <td className="py-2 pr-3">{r.name ?? r.teamName ?? "—"}</td>
-                          <td className="py-2 pr-3 text-slate-500 text-sm">{pa}</td>
+                          <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
+
+                          <td className="py-2 pr-3 font-medium">
+                            {r.name ?? r.teamName ?? "—"}
+                          </td>
+
+                          {/* PA (discreto) */}
+                          <td className="py-2 pr-3 text-slate-400 text-sm">
+                            {pa}
+                          </td>
+
+                          {/* ⏳ Faltan (minimal) */}
                           <td className="py-2 pr-3 text-center">
                             {faltan > 0 ? (
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
@@ -1293,14 +1290,20 @@ export default function App() {
                             )}
                           </td>
 
+                          {/* PJ */}
                           <td className="py-2 pr-3">{pj}</td>
+
                           <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
                           <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
                           <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
                           <td className="py-2 pr-3">{r.gf ?? 0}</td>
                           <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                          <td className="py-2 pr-3">{(r.gf ?? 0) - (r.gc ?? 0)}</td>
-                          <td className="py-2 pr-3 font-semibold">{r.pts ?? r.points ?? 0}</td>
+                          <td className="py-2 pr-3 text-slate-600">
+                            {(r.gf ?? 0) - (r.gc ?? 0)}
+                          </td>
+                          <td className="py-2 pr-3 font-semibold">
+                            {r.pts ?? r.points ?? 0}
+                          </td>
                         </tr>
                       );
                     })}
