@@ -1267,17 +1267,8 @@ export default function App() {
                       return (
                         <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
                           <td className="py-2 pr-3 font-medium">{i + 1}</td>
-
-                          <td className="py-2 pr-3">
-                            {r.name ?? r.teamName ?? "—"}
-                          </td>
-
-                          {/* PA */}
-                          <td className="py-2 pr-3 text-slate-500 text-sm">
-                            {pa}
-                          </td>
-
-                          {/* FALTAN */}
+                          <td className="py-2 pr-3">{r.name ?? r.teamName ?? "—"}</td>
+                          <td className="py-2 pr-3 text-slate-500 text-sm">{pa}</td>
                           <td className="py-2 pr-3 text-center">
                             {faltan > 0 ? (
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
@@ -1291,19 +1282,13 @@ export default function App() {
                           </td>
 
                           <td className="py-2 pr-3">{pj}</td>
-                          <td className="py-2 pr-3">{r.pg ?? 0}</td>
-                          <td className="py-2 pr-3">{r.pe ?? 0}</td>
-                          <td className="py-2 pr-3">{r.pp ?? 0}</td>
+                          <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                          <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                          <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
                           <td className="py-2 pr-3">{r.gf ?? 0}</td>
                           <td className="py-2 pr-3">{r.gc ?? 0}</td>
-
-                          <td className="py-2 pr-3">
-                            {(r.gf ?? 0) - (r.gc ?? 0)}
-                          </td>
-
-                          <td className="py-2 pr-3 font-semibold">
-                            {r.pts ?? 0}
-                          </td>
+                          <td className="py-2 pr-3">{(r.gf ?? 0) - (r.gc ?? 0)}</td>
+                          <td className="py-2 pr-3 font-semibold">{r.pts ?? r.points ?? 0}</td>
                         </tr>
                       );
                     })}
