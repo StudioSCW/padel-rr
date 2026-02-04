@@ -1185,12 +1185,6 @@ export default function App() {
                               </ul>
                             </div>
                           )}
-                      </div>
-                      );
-                })}
-                    </div>
-                  )
-                }
           </div>
 
           {/* ===== Tabla General + Export ===== */}
@@ -1335,70 +1329,70 @@ export default function App() {
         Padel Round Robin by Velno – ABR
       </footer>
     </div>
-  );
+          );
 }
 
-function TeamLabel({ team, nameOverride }: any) {
+          function TeamLabel({team, nameOverride}: any) {
   return (
-    <div className="flex items-center gap-2 py-1">
-      <div className="flex -space-x-2">
-        {team.map((p: any) => (
-          <div
-            key={p.id}
-            title={p.name}
-            className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
-          >
-            {initials(p.name)}
+          <div className="flex items-center gap-2 py-1">
+            <div className="flex -space-x-2">
+              {team.map((p: any) => (
+                <div
+                  key={p.id}
+                  title={p.name}
+                  className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
+                >
+                  {initials(p.name)}
+                </div>
+              ))}
+            </div>
+            <div className="text-sm">
+              {nameOverride || team.map((p: any) => p.name).join(" + ")}
+            </div>
           </div>
-        ))}
-      </div>
-      <div className="text-sm">
-        {nameOverride || team.map((p: any) => p.name).join(" + ")}
-      </div>
-    </div>
-  );
+          );
 }
 
-function initials(name: string) {
+          function initials(name: string) {
   const parts = name.trim().split(/\s+/);
-  return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+          return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
 }
 
-function computeStandings(
-  mode: string,
-  schedule: any[],
-  players: any[],
-  teams: any[]
-) {
+          function computeStandings(
+          mode: string,
+          schedule: any[],
+          players: any[],
+          teams: any[]
+          ) {
   const table = new Map<string, any>();
 
   const addRow = (id: string, name: string) => {
     if (!table.has(id))
-      table.set(id, {
-        id,
-        name,
-        pa: 0,
-        pj: 0,
-        pg: 0,
-        pe: 0,
-        pp: 0,
-        gf: 0,
-        gc: 0,
-        pts: 0,
+          table.set(id, {
+            id,
+            name,
+            pa: 0,
+          pj: 0,
+          pg: 0,
+          pe: 0,
+          pp: 0,
+          gf: 0,
+          gc: 0,
+          pts: 0,
       });
   };
 
-  if (mode === MODES.INDIVIDUAL) {
-    players.forEach((p) => addRow(p.id, p.name));
+          if (mode === MODES.INDIVIDUAL) {
+            players.forEach((p) => addRow(p.id, p.name));
   } else {
-    teams.forEach((t) => addRow(t.id, t.name));
+            teams.forEach((t) => addRow(t.id, t.name));
   }
 
-  // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
-  const assured = new Map<string, number>();
+          // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
+          const assured = new Map<string, number>();
 
   const incAssured = (id: string) => {
-    assured.set(id, (assured.get(id) || 0) + 1);
+            assured.set(id, (assured.get(id) || 0) + 1);
   };
 
   schedule.forEach((round: any) => {
@@ -1407,12 +1401,12 @@ function computeStandings(
       if (mode === MODES.INDIVIDUAL) {
         // cada jugador tiene 1 partido asegurado por match
         for (const p of m.teamA || []) incAssured(p.id);
-        for (const p of m.teamB || []) incAssured(p.id);
+          for (const p of m.teamB || []) incAssured(p.id);
       } else {
         const teamAId = m.teamIdA || teamKey(m.teamA);
-        const teamBId = m.teamIdB || teamKey(m.teamB);
-        if (teamAId) incAssured(teamAId);
-        if (teamBId) incAssured(teamBId);
+          const teamBId = m.teamIdB || teamKey(m.teamB);
+          if (teamAId) incAssured(teamAId);
+          if (teamBId) incAssured(teamBId);
       }
     });
   });
@@ -1422,14 +1416,14 @@ function computeStandings(
     (matches || []).forEach((m: any) => {
       if (!m.played) return;
 
-      const aGF = m.scoreA || 0;
-      const bGF = m.scoreB || 0;
+          const aGF = m.scoreA || 0;
+          const bGF = m.scoreB || 0;
 
-      if (mode === MODES.INDIVIDUAL) {
+          if (mode === MODES.INDIVIDUAL) {
         for (const p of m.teamA) addRow(p.id, p.name);
-        for (const p of m.teamB) addRow(p.id, p.name);
-        for (const p of m.teamA) upd(table, p.id, aGF, bGF);
-        for (const p of m.teamB) upd(table, p.id, bGF, aGF);
+          for (const p of m.teamB) addRow(p.id, p.name);
+          for (const p of m.teamA) upd(table, p.id, aGF, bGF);
+          for (const p of m.teamB) upd(table, p.id, bGF, aGF);
         if (aGF > bGF) {
           for (const p of m.teamA) win(table, p.id);
           for (const p of m.teamB) loss(table, p.id);
@@ -1441,25 +1435,25 @@ function computeStandings(
         }
       } else {
         const teamAId = m.teamIdA || teamKey(m.teamA);
-        const teamBId = m.teamIdB || teamKey(m.teamB);
-        const teamAName =
+          const teamBId = m.teamIdB || teamKey(m.teamB);
+          const teamAName =
           teams.find((t: any) => t.id === teamAId)?.name ||
           m.teamA.map((p: any) => p.name).join(" + ");
-        const teamBName =
+          const teamBName =
           teams.find((t: any) => t.id === teamBId)?.name ||
           m.teamB.map((p: any) => p.name).join(" + ");
-        addRow(teamAId, teamAName);
-        addRow(teamBId, teamBName);
-        upd(table, teamAId, aGF, bGF);
-        upd(table, teamBId, bGF, aGF);
+          addRow(teamAId, teamAName);
+          addRow(teamBId, teamBName);
+          upd(table, teamAId, aGF, bGF);
+          upd(table, teamBId, bGF, aGF);
         if (aGF > bGF) {
-          win(table, teamAId);
+            win(table, teamAId);
           loss(table, teamBId);
         } else if (bGF > aGF) {
-          win(table, teamBId);
+            win(table, teamBId);
           loss(table, teamAId);
         } else {
-          draw(table, teamAId);
+            draw(table, teamAId);
           draw(table, teamBId);
         }
       }
@@ -1468,64 +1462,64 @@ function computeStandings(
 
   // ✅ Asignar PA (Partidos Asegurados) a cada fila
   table.forEach((row, id) => {
-    row.pa = assured.get(id) || 0;
+            row.pa = assured.get(id) || 0;
   });
 
-  return Array.from(table.values()).sort(
+          return Array.from(table.values()).sort(
     (x, y) =>
-      y.pts - x.pts ||
-      (y.gf - y.gc) - (x.gf - x.gc) ||
-      y.gf - x.gf
-  );
+          y.pts - x.pts ||
+          (y.gf - y.gc) - (x.gf - x.gc) ||
+          y.gf - x.gf
+          );
 }
 
-function teamKey(players: any[]) {
+          function teamKey(players: any[]) {
   return players
     .map((p) => p.id)
-    .sort()
-    .join("_");
+          .sort()
+          .join("_");
 }
-function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
+          function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
   const r = table.get(id);
-  r.pj += 1;
-  r.gf += gf;
-  r.gc += gc;
-  table.set(id, r);
+          r.pj += 1;
+          r.gf += gf;
+          r.gc += gc;
+          table.set(id, r);
 }
-function win(table: Map<string, any>, id: string) {
+          function win(table: Map<string, any>, id: string) {
   const r = table.get(id);
-  r.pg += 1;
-  r.pts += 3;
-  table.set(id, r);
+          r.pg += 1;
+          r.pts += 3;
+          table.set(id, r);
 }
-function draw(table: Map<string, any>, id: string) {
+          function draw(table: Map<string, any>, id: string) {
   const r = table.get(id);
-  r.pe += 1;
-  r.pts += 1;
-  table.set(id, r);
+          r.pe += 1;
+          r.pts += 1;
+          table.set(id, r);
 }
-function loss(table: Map<string, any>, id: string) {
+          function loss(table: Map<string, any>, id: string) {
   const r = table.get(id);
-  r.pp += 1;
-  table.set(id, r);
+          r.pp += 1;
+          table.set(id, r);
 }
 
-function CalendarIcon() {
+          function CalendarIcon() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-slate-700"
-    >
-      <path
-        d="M7 2v3M17 2v3M4 11h16M4 7h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-slate-700"
+          >
+            <path
+              d="M7 2v3M17 2v3M4 11h16M4 7h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          );
 }
