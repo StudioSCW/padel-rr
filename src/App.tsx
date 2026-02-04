@@ -1134,227 +1134,200 @@ export default function App() {
                                     nameOverride={liveNameB || m.teamNameB}
                                   />
                                 </div>
+
+                                <div className="w-28 grid grid-cols-2 gap-2 text-center">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={99}
+                                    value={m.scoreA}
+                                    onChange={(e) =>
+                                      updateScore(rIdx, mIdx, "scoreA", e.target.value)
+                                    }
+                                    className="rounded-xl border px-2 py-1"
+                                  />
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={99}
+                                    value={m.scoreB}
+                                    onChange={(e) =>
+                                      updateScore(rIdx, mIdx, "scoreB", e.target.value)
+                                    }
+                                    className="rounded-xl border px-2 py-1"
+                                  />
+                                </div>
                               </div>
                             </div>
                           );
                         })}
-                        <div key={m.id} className="border rounded-xl p-3">
-                          <div className="text-xs text-slate-500 mb-1">
-                            Cancha {mIdx + 1}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <TeamLabel
-                                team={m.teamA}
-                                nameOverride={m.teamNameA}
-                              />
-                              <TeamLabel
-                                team={m.teamB}
-                                nameOverride={m.teamNameB}
-                              />
-                            </div>
-                            <div className="w-28 grid grid-cols-2 gap-2 text-center">
-                              <input
-                                type="number"
-                                min={0}
-                                max={99}
-                                value={m.scoreA}
-                                onChange={(e) =>
-                                  updateScore(
-                                    rIdx,
-                                    mIdx,
-                                    "scoreA",
-                                    e.target.value
-                                  )
-                                }
-                                className="rounded-xl border px-2 py-1"
-                              />
-                              <input
-                                type="number"
-                                min={0}
-                                max={99}
-                                value={m.scoreB}
-                                onChange={(e) =>
-                                  updateScore(
-                                    rIdx,
-                                    mIdx,
-                                    "scoreB",
-                                    e.target.value
-                                  )
-                                }
-                                className="rounded-xl border px-2 py-1"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        ))}
-                      </div>
 
-                      {mode === MODES.TEAMS && restingTeams.length > 0 && (
-                        <div className="mt-3 text-sm text-slate-600">
-                          <div className="font-medium">Descansan:</div>
-                          <ul className="list-disc pl-5">
-                            {restingTeams.map((t: any) => (
-                              <li key={t.id}>{t.name}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {mode === MODES.INDIVIDUAL &&
-                        round.resting &&
-                        round.resting.length > 0 && (
+                        {mode === MODES.TEAMS && restingTeams.length > 0 && (
                           <div className="mt-3 text-sm text-slate-600">
                             <div className="font-medium">Descansan:</div>
                             <ul className="list-disc pl-5">
-                              {round.resting.map((p: any) => (
-                                <li key={p.id}>{p.name}</li>
+                              {restingTeams.map((t: any) => (
+                                <li key={t.id}>{t.name}</li>
                               ))}
                             </ul>
                           </div>
                         )}
-                    </div>
-                  );
+
+                        {mode === MODES.INDIVIDUAL &&
+                          round.resting &&
+                          round.resting.length > 0 && (
+                            <div className="mt-3 text-sm text-slate-600">
+                              <div className="font-medium">Descansan:</div>
+                              <ul className="list-disc pl-5">
+                                {round.resting.map((p: any) => (
+                                  <li key={p.id}>{p.name}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                      </div>
+                      );
                 })}
-              </div>
-            )}
+                    </div>
+                  )
+                }
           </div>
 
           {/* ===== Tabla General + Export ===== */}
-          <div className="bg-white rounded-2xl shadow p-4 mt-6">
+            <div className="bg-white rounded-2xl shadow p-4 mt-6">
 
-            {/* Header: título + acciones */}
-            <div className="flex gap-2">
-              <button
-                onClick={resetTable}
-                className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
-                title="Reinicia todos los marcadores y deja la tabla en cero"
-              >
-                Reiniciar tabla
-              </button>
-
-              <button
-                disabled={!schedule || schedule.length === 0}
-                onClick={exportScheduleCSV}
-                className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                  }`}
-              >
-                Descargar calendario (CSV)
-              </button>
-            </div>
-
-            {/* Resumen rápido de configuración y equilibrio de partidos */}
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
-              </span>
-
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                {mode === MODES.TEAMS
-                  ? `Equipos: ${teams.length}`
-                  : `Jugadores: ${players.length}`}
-              </span>
-
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                Rondas generadas: {schedule.length}
-              </span>
-
-              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                Canchas: {courts}
-              </span>
-
-              {mode === MODES.TEAMS && gamesBalanceInfo && (
-                <span
-                  className={
-                    "inline-flex items-center rounded-full px-2 py-0.5 border " +
-                    (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
-                      ? "border-amber-300 bg-amber-50 text-amber-700"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-700")
-                  }
+              {/* Header: título + acciones */}
+              <div className="flex gap-2">
+                <button
+                  onClick={resetTable}
+                  className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
+                  title="Reinicia todos los marcadores y deja la tabla en cero"
                 >
-                  PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+                  Reiniciar tabla
+                </button>
+
+                <button
+                  disabled={!schedule || schedule.length === 0}
+                  onClick={exportScheduleCSV}
+                  className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    }`}
+                >
+                  Descargar calendario (CSV)
+                </button>
+              </div>
+
+              {/* Resumen rápido de configuración y equilibrio de partidos */}
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
                 </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  {mode === MODES.TEAMS
+                    ? `Equipos: ${teams.length}`
+                    : `Jugadores: ${players.length}`}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  Rondas generadas: {schedule.length}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  Canchas: {courts}
+                </span>
+
+                {mode === MODES.TEAMS && gamesBalanceInfo && (
+                  <span
+                    className={
+                      "inline-flex items-center rounded-full px-2 py-0.5 border " +
+                      (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                        ? "border-amber-300 bg-amber-50 text-amber-700"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-700")
+                    }
+                  >
+                    PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+                  </span>
+                )}
+              </div>
+
+              {standings.length === 0 ? (
+                <div className="text-sm text-slate-500">
+                  Juega o genera rondas para ver la tabla.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="text-left text-slate-500 text-sm">
+                      <tr>
+                        <th className="py-2 pr-3">Pos</th>
+                        <th className="py-2 pr-3">Nombre</th>
+                        <th className="py-2 pr-3">PA</th>
+                        <th className="py-2 pr-3 text-center">⏳</th>
+                        <th className="py-2 pr-3">PJ</th>
+                        <th className="py-2 pr-3">PG</th>
+                        <th className="py-2 pr-3">PE</th>
+                        <th className="py-2 pr-3">PP</th>
+                        <th className="py-2 pr-3">GF</th>
+                        <th className="py-2 pr-3">GC</th>
+                        <th className="py-2 pr-3">DG</th>
+                        <th className="py-2 pr-3">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standings.map((r: any, i: number) => {
+                        const pa = r.pa ?? 0;
+                        const pj = r.pj ?? 0;
+                        const faltan = Math.max(0, pa - pj);
+
+                        return (
+                          <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
+                            <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
+
+                            <td className="py-2 pr-3 font-medium">
+                              {r.name ?? r.teamName ?? "—"}
+                            </td>
+
+                            {/* PA (discreto) */}
+                            <td className="py-2 pr-3 text-slate-400 text-sm">
+                              {pa}
+                            </td>
+
+                            {/* ⏳ Faltan (minimal) */}
+                            <td className="py-2 pr-3 text-center">
+                              {faltan > 0 ? (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                  {faltan}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                  ✓
+                                </span>
+                              )}
+                            </td>
+
+                            {/* PJ */}
+                            <td className="py-2 pr-3">{pj}</td>
+                            <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                            <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                            <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                            <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                            <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                            <td className="py-2 pr-3 text-slate-600">
+                              {(r.gf ?? 0) - (r.gc ?? 0)}
+                            </td>
+                            <td className="py-2 pr-3 font-semibold">
+                              {r.pts ?? r.points ?? 0}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-
-            {standings.length === 0 ? (
-              <div className="text-sm text-slate-500">
-                Juega o genera rondas para ver la tabla.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="text-left text-slate-500 text-sm">
-                    <tr>
-                      <th className="py-2 pr-3">Pos</th>
-                      <th className="py-2 pr-3">Nombre</th>
-                      <th className="py-2 pr-3">PA</th>
-                      <th className="py-2 pr-3 text-center">⏳</th>
-                      <th className="py-2 pr-3">PJ</th>
-                      <th className="py-2 pr-3">PG</th>
-                      <th className="py-2 pr-3">PE</th>
-                      <th className="py-2 pr-3">PP</th>
-                      <th className="py-2 pr-3">GF</th>
-                      <th className="py-2 pr-3">GC</th>
-                      <th className="py-2 pr-3">DG</th>
-                      <th className="py-2 pr-3">Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standings.map((r: any, i: number) => {
-                      const pa = r.pa ?? 0;
-                      const pj = r.pj ?? 0;
-                      const faltan = Math.max(0, pa - pj);
-
-                      return (
-                        <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
-                          <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
-
-                          <td className="py-2 pr-3 font-medium">
-                            {r.name ?? r.teamName ?? "—"}
-                          </td>
-
-                          {/* PA (discreto) */}
-                          <td className="py-2 pr-3 text-slate-400 text-sm">
-                            {pa}
-                          </td>
-
-                          {/* ⏳ Faltan (minimal) */}
-                          <td className="py-2 pr-3 text-center">
-                            {faltan > 0 ? (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
-                                {faltan}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                ✓
-                              </span>
-                            )}
-                          </td>
-
-                          {/* PJ */}
-                          <td className="py-2 pr-3">{pj}</td>
-                          <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
-                          <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
-                          <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                          <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                          <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                          <td className="py-2 pr-3 text-slate-600">
-                            {(r.gf ?? 0) - (r.gc ?? 0)}
-                          </td>
-                          <td className="py-2 pr-3 font-semibold">
-                            {r.pts ?? r.points ?? 0}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
         </section>
       </main>
 
