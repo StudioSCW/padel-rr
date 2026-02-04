@@ -44,7 +44,9 @@ function pickBalancedMatches(
   const used = new Set<string>();
 
   const score = ([A, B]: any[]) =>
-    (gamesCount.get(A.id) || 0) + (gamesCount.get(B.id) || 0);
+    (gamesCount.get(A.id) || 0) +
+    (gamesCount.get(B.id) || 0) +
+    3 * ((restCount.get(A.id) || 0) + (restCount.get(B.id) || 0));
 
   const sorted = playable.slice().sort((m1, m2) => score(m1) - score(m2));
 
@@ -496,11 +498,25 @@ export default function App() {
         teams.map((t: any) => [t.id, 0])
       );
 
+      const restCount = new Map<string, number>(
+        teams.map((t: any) => [t.id, 0])
+      );
+
       const sched = extended.map((pairings: any[]) => {
         const playable = pairings.filter(
           ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
         );
         const chosen = pickBalancedMatches(playable, courts, gamesCount);
+
+        const playingIds = new Set(
+          chosen.flatMap(([A, B]) => [A.id, B.id])
+        );
+
+        teams.forEach(t => {
+          if (!playingIds.has(t.id)) {
+            restCount.set(t.id, (restCount.get(t.id) || 0) + 1);
+          }
+        });
 
         return chosen.map(([A, B]: any[]) => ({
           id: uid(),
