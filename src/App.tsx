@@ -297,6 +297,9 @@ export default function App() {
   const [tournamentId, setTournamentId] = useState<string>(() => uid());
   const [teamPlan, setTeamPlan] = useState<any[] | null>(null);
   const [teamRoundIdx, setTeamRoundIdx] = useState<number>(0);
+  const hasUnnamedTeams =
+    mode === MODES.TEAMS &&
+    teams.some((t: any) => !t.name || t.name.trim() === "");
 
   useEffect(() => {
     setTeamPlan(null);
@@ -501,14 +504,15 @@ export default function App() {
           id: uid(),
           teamA: A.players,
           teamB: B.players,
-          teamNameA: A.name,
-          teamNameB: B.name,
+          teamNameA: A.name,   // ✅ AGREGAR
+          teamNameB: B.name,   // ✅ AGREGAR
           teamIdA: A.id,
           teamIdB: B.id,
           scoreA: 0,
           scoreB: 0,
           played: false,
         }));
+
       });
 
       setSchedule(sched);
@@ -1013,12 +1017,22 @@ export default function App() {
               >
                 <PlayCircle className="inline w-4 h-4 mr-2" /> Generar
               </button>
+              {hasUnnamedTeams && (
+                <div className="mb-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  Completa el nombre de todos los equipos antes de generar el calendario
+                </div>
+              )}
               <button
                 onClick={randomizeNextRound}
-                className="px-4 py-2 rounded-xl border flex items-center gap-2"
+                disabled={hasUnnamedTeams}
+                className={`px-4 py-2 rounded text-white ${hasUnnamedTeams
+                  ? "bg-slate-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+                  }`}
               >
-                <Shuffle className="w-4 h-4" /> Nueva ronda
+                Generar siguiente ronda
               </button>
+
             </div>
           </div>
 
@@ -1092,57 +1106,87 @@ export default function App() {
                             No hay partidos para esta ronda.
                           </div>
                         )}
+                        {matches.map((m: any, mIdx: number) => {
+                          const liveNameA =
+                            mode === MODES.TEAMS
+                              ? teams.find((t: any) => t.id === m.teamIdA)?.name
+                              : undefined;
 
-                        {matches.map((m: any, mIdx: number) => (
-                          <div key={m.id} className="border rounded-xl p-3">
-                            <div className="text-xs text-slate-500 mb-1">
-                              Cancha {mIdx + 1}
+                          const liveNameB =
+                            mode === MODES.TEAMS
+                              ? teams.find((t: any) => t.id === m.teamIdB)?.name
+                              : undefined;
+
+                          return (
+                            <div key={m.id} className="border rounded-xl p-3">
+                              <div className="text-xs text-slate-500 mb-1">
+                                Cancha {mIdx + 1}
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <TeamLabel
+                                    team={m.teamA}
+                                    nameOverride={liveNameA || m.teamNameA}
+                                  />
+                                  <TeamLabel
+                                    team={m.teamB}
+                                    nameOverride={liveNameB || m.teamNameB}
+                                  />
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <TeamLabel
-                                  team={m.teamA}
-                                  nameOverride={m.teamNameA}
-                                />
-                                <TeamLabel
-                                  team={m.teamB}
-                                  nameOverride={m.teamNameB}
-                                />
-                              </div>
-                              <div className="w-28 grid grid-cols-2 gap-2 text-center">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={99}
-                                  value={m.scoreA}
-                                  onChange={(e) =>
-                                    updateScore(
-                                      rIdx,
-                                      mIdx,
-                                      "scoreA",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="rounded-xl border px-2 py-1"
-                                />
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={99}
-                                  value={m.scoreB}
-                                  onChange={(e) =>
-                                    updateScore(
-                                      rIdx,
-                                      mIdx,
-                                      "scoreB",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="rounded-xl border px-2 py-1"
-                                />
-                              </div>
+                          );
+                        })}
+                        <div key={m.id} className="border rounded-xl p-3">
+                          <div className="text-xs text-slate-500 mb-1">
+                            Cancha {mIdx + 1}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <TeamLabel
+                                team={m.teamA}
+                                nameOverride={m.teamNameA}
+                              />
+                              <TeamLabel
+                                team={m.teamB}
+                                nameOverride={m.teamNameB}
+                              />
+                            </div>
+                            <div className="w-28 grid grid-cols-2 gap-2 text-center">
+                              <input
+                                type="number"
+                                min={0}
+                                max={99}
+                                value={m.scoreA}
+                                onChange={(e) =>
+                                  updateScore(
+                                    rIdx,
+                                    mIdx,
+                                    "scoreA",
+                                    e.target.value
+                                  )
+                                }
+                                className="rounded-xl border px-2 py-1"
+                              />
+                              <input
+                                type="number"
+                                min={0}
+                                max={99}
+                                value={m.scoreB}
+                                onChange={(e) =>
+                                  updateScore(
+                                    rIdx,
+                                    mIdx,
+                                    "scoreB",
+                                    e.target.value
+                                  )
+                                }
+                                className="rounded-xl border px-2 py-1"
+                              />
                             </div>
                           </div>
+                        </div>
                         ))}
                       </div>
 
@@ -1292,7 +1336,6 @@ export default function App() {
 
                           {/* PJ */}
                           <td className="py-2 pr-3">{pj}</td>
-
                           <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
                           <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
                           <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
