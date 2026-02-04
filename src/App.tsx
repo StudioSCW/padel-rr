@@ -1064,18 +1064,16 @@ export default function App() {
                 Genera tu primera ronda para ver los partidos.
               </div>
             ) : (
-              <div className="space-y-6">
+              <><div className="space-y-6">
                 {schedule.map((round: any, rIdx: number) => {
-                  const matches =
-                    (mode === MODES.TEAMS ? (round as any[]) : round.matches) || [];
+                  const matches = (mode === MODES.TEAMS ? (round as any[]) : round.matches) || [];
 
                   const playingIds = new Set(
                     matches.flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
                   );
-                  const restingTeams =
-                    mode === MODES.TEAMS
-                      ? teams.filter((t: any) => !playingIds.has(t.id))
-                      : [];
+                  const restingTeams = mode === MODES.TEAMS
+                    ? teams.filter((t: any) => !playingIds.has(t.id))
+                    : [];
 
                   return (
                     <div key={rIdx} className="border rounded-2xl p-3">
@@ -1089,11 +1087,8 @@ export default function App() {
                             Reiniciar marcadores
                           </button>
                           <button
-                            onClick={() =>
-                              setSchedule((prev: any[]) =>
-                                prev.filter((_, i) => i !== rIdx)
-                              )
-                            }
+                            onClick={() => setSchedule((prev: any[]) => prev.filter((_, i) => i !== rIdx)
+                            )}
                             className="text-slate-400 hover:text-red-600"
                             title="Eliminar ronda"
                           >
@@ -1109,15 +1104,13 @@ export default function App() {
                           </div>
                         )}
                         {matches.map((m: any, mIdx: number) => {
-                          const liveNameA =
-                            mode === MODES.TEAMS
-                              ? teams.find((t: any) => t.id === m.teamIdA)?.name
-                              : undefined;
+                          const liveNameA = mode === MODES.TEAMS
+                            ? teams.find((t: any) => t.id === m.teamIdA)?.name
+                            : undefined;
 
-                          const liveNameB =
-                            mode === MODES.TEAMS
-                              ? teams.find((t: any) => t.id === m.teamIdB)?.name
-                              : undefined;
+                          const liveNameB = mode === MODES.TEAMS
+                            ? teams.find((t: any) => t.id === m.teamIdB)?.name
+                            : undefined;
 
                           return (
                             <div key={m.id} className="border rounded-xl p-3">
@@ -1129,12 +1122,10 @@ export default function App() {
                                 <div className="flex-1">
                                   <TeamLabel
                                     team={m.teamA}
-                                    nameOverride={liveNameA || m.teamNameA}
-                                  />
+                                    nameOverride={liveNameA || m.teamNameA} />
                                   <TeamLabel
                                     team={m.teamB}
-                                    nameOverride={liveNameB || m.teamNameB}
-                                  />
+                                    nameOverride={liveNameB || m.teamNameB} />
                                 </div>
 
                                 <div className="w-28 grid grid-cols-2 gap-2 text-center">
@@ -1143,21 +1134,15 @@ export default function App() {
                                     min={0}
                                     max={99}
                                     value={m.scoreA}
-                                    onChange={(e) =>
-                                      updateScore(rIdx, mIdx, "scoreA", e.target.value)
-                                    }
-                                    className="rounded-xl border px-2 py-1"
-                                  />
+                                    onChange={(e) => updateScore(rIdx, mIdx, "scoreA", e.target.value)}
+                                    className="rounded-xl border px-2 py-1" />
                                   <input
                                     type="number"
                                     min={0}
                                     max={99}
                                     value={m.scoreB}
-                                    onChange={(e) =>
-                                      updateScore(rIdx, mIdx, "scoreB", e.target.value)
-                                    }
-                                    className="rounded-xl border px-2 py-1"
-                                  />
+                                    onChange={(e) => updateScore(rIdx, mIdx, "scoreB", e.target.value)}
+                                    className="rounded-xl border px-2 py-1" />
                                 </div>
                               </div>
                             </div>
@@ -1185,221 +1170,210 @@ export default function App() {
                                   <li key={p.id}>{p.name}</li>
                                 ))}
                               </ul>
-                            </div>
-                          )}
+                            </div>)}
                       </div>
-                      );
-                    </div>
-                  )
-                }
-          </div>
 
-          {/* ===== Tabla General + Export ===== */}
-            <div className="bg-white rounded-2xl shadow p-4 mt-6">
+                      {/* ===== Tabla General + Export ===== */}
+                      <div className="bg-white rounded-2xl shadow p-4 mt-6">
 
-              {/* Header: título + acciones */}
-              <div className="flex gap-2">
-                <button
-                  onClick={resetTable}
-                  className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
-                  title="Reinicia todos los marcadores y deja la tabla en cero"
-                >
-                  Reiniciar tabla
-                </button>
+                        {/* Header: título + acciones */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={resetTable}
+                            className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
+                            title="Reinicia todos los marcadores y deja la tabla en cero"
+                          >
+                            Reiniciar tabla
+                          </button>
 
-                <button
-                  disabled={!schedule || schedule.length === 0}
-                  onClick={exportScheduleCSV}
-                  className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    }`}
-                >
-                  Descargar calendario (CSV)
-                </button>
-              </div>
+                          <button
+                            disabled={!schedule || schedule.length === 0}
+                            onClick={exportScheduleCSV}
+                            className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
+                              ? "bg-slate-900 text-white"
+                              : "bg-slate-200 text-slate-500 cursor-not-allowed"}`}
+                          >
+                            Descargar calendario (CSV)
+                          </button>
+                        </div>
 
-              {/* Resumen rápido de configuración y equilibrio de partidos */}
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
-                </span>
+                        {/* Resumen rápido de configuración y equilibrio de partidos */}
+                        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                            {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+                          </span>
 
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  {mode === MODES.TEAMS
-                    ? `Equipos: ${teams.length}`
-                    : `Jugadores: ${players.length}`}
-                </span>
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                            {mode === MODES.TEAMS
+                              ? `Equipos: ${teams.length}`
+                              : `Jugadores: ${players.length}`}
+                          </span>
 
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  Rondas generadas: {schedule.length}
-                </span>
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                            Rondas generadas: {schedule.length}
+                          </span>
 
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                  Canchas: {courts}
-                </span>
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                            Canchas: {courts}
+                          </span>
 
-                {mode === MODES.TEAMS && gamesBalanceInfo && (
-                  <span
-                    className={
-                      "inline-flex items-center rounded-full px-2 py-0.5 border " +
-                      (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
-                        ? "border-amber-300 bg-amber-50 text-amber-700"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-700")
-                    }
-                  >
-                    PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
-                  </span>
-                )}
-              </div>
+                          {mode === MODES.TEAMS && gamesBalanceInfo && (
+                            <span
+                              className={"inline-flex items-center rounded-full px-2 py-0.5 border " +
+                                (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                                  ? "border-amber-300 bg-amber-50 text-amber-700"
+                                  : "border-emerald-200 bg-emerald-50 text-emerald-700")}
+                            >
+                              PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
+                            </span>
+                          )}
+                        </div>
 
-              {standings.length === 0 ? (
-                <div className="text-sm text-slate-500">
-                  Juega o genera rondas para ver la tabla.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="text-left text-slate-500 text-sm">
-                      <tr>
-                        <th className="py-2 pr-3">Pos</th>
-                        <th className="py-2 pr-3">Nombre</th>
-                        <th className="py-2 pr-3">PA</th>
-                        <th className="py-2 pr-3 text-center">⏳</th>
-                        <th className="py-2 pr-3">PJ</th>
-                        <th className="py-2 pr-3">PG</th>
-                        <th className="py-2 pr-3">PE</th>
-                        <th className="py-2 pr-3">PP</th>
-                        <th className="py-2 pr-3">GF</th>
-                        <th className="py-2 pr-3">GC</th>
-                        <th className="py-2 pr-3">DG</th>
-                        <th className="py-2 pr-3">Pts</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {standings.map((r: any, i: number) => {
-                        const pa = r.pa ?? 0;
-                        const pj = r.pj ?? 0;
-                        const faltan = Math.max(0, pa - pj);
+                        {standings.length === 0 ? (
+                          <div className="text-sm text-slate-500">
+                            Juega o genera rondas para ver la tabla.
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                              <thead className="text-left text-slate-500 text-sm">
+                                <tr>
+                                  <th className="py-2 pr-3">Pos</th>
+                                  <th className="py-2 pr-3">Nombre</th>
+                                  <th className="py-2 pr-3">PA</th>
+                                  <th className="py-2 pr-3 text-center">⏳</th>
+                                  <th className="py-2 pr-3">PJ</th>
+                                  <th className="py-2 pr-3">PG</th>
+                                  <th className="py-2 pr-3">PE</th>
+                                  <th className="py-2 pr-3">PP</th>
+                                  <th className="py-2 pr-3">GF</th>
+                                  <th className="py-2 pr-3">GC</th>
+                                  <th className="py-2 pr-3">DG</th>
+                                  <th className="py-2 pr-3">Pts</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {standings.map((r: any, i: number) => {
+                                  const pa = r.pa ?? 0;
+                                  const pj = r.pj ?? 0;
+                                  const faltan = Math.max(0, pa - pj);
 
-                        return (
-                          <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
-                            <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
+                                  return (
+                                    <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
+                                      <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
 
-                            <td className="py-2 pr-3 font-medium">
-                              {r.name ?? r.teamName ?? "—"}
-                            </td>
+                                      <td className="py-2 pr-3 font-medium">
+                                        {r.name ?? r.teamName ?? "—"}
+                                      </td>
 
-                            {/* PA (discreto) */}
-                            <td className="py-2 pr-3 text-slate-400 text-sm">
-                              {pa}
-                            </td>
+                                      {/* PA (discreto) */}
+                                      <td className="py-2 pr-3 text-slate-400 text-sm">
+                                        {pa}
+                                      </td>
 
-                            {/* ⏳ Faltan (minimal) */}
-                            <td className="py-2 pr-3 text-center">
-                              {faltan > 0 ? (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
-                                  {faltan}
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                  ✓
-                                </span>
-                              )}
-                            </td>
+                                      {/* ⏳ Faltan (minimal) */}
+                                      <td className="py-2 pr-3 text-center">
+                                        {faltan > 0 ? (
+                                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                            {faltan}
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                            ✓
+                                          </span>
+                                        )}
+                                      </td>
 
-                            {/* PJ */}
-                            <td className="py-2 pr-3">{pj}</td>
-                            <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
-                            <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
-                            <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                            <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                            <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                            <td className="py-2 pr-3 text-slate-600">
-                              {(r.gf ?? 0) - (r.gc ?? 0)}
-                            </td>
-                            <td className="py-2 pr-3 font-semibold">
-                              {r.pts ?? r.points ?? 0}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-        </section>
-      </main>
+                                      {/* PJ */}
+                                      <td className="py-2 pr-3">{pj}</td>
+                                      <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                                      <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                                      <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                                      <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                                      <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                                      <td className="py-2 pr-3 text-slate-600">
+                                        {(r.gf ?? 0) - (r.gc ?? 0)}
+                                      </td>
+                                      <td className="py-2 pr-3 font-semibold">
+                                        {r.pts ?? r.points ?? 0}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>)}
+                      </div>
+                    </section>);
+                })}
+              </main><footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+                  Padel Round Robin by Velno – ABR
+                </footer></>
+        </div>
+          );
+          }
 
-      <footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
-        Padel Round Robin by Velno – ABR
-      </footer>
-    </div>
-  );
-}
-
-function TeamLabel({ team, nameOverride }: any) {
+          function TeamLabel({team, nameOverride}: any) {
   return (
-    <div className="flex items-center gap-2 py-1">
-      <div className="flex -space-x-2">
-        {team.map((p: any) => (
-          <div
-            key={p.id}
-            title={p.name}
-            className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
-          >
-            {initials(p.name)}
+          <div className="flex items-center gap-2 py-1">
+            <div className="flex -space-x-2">
+              {team.map((p: any) => (
+                <div
+                  key={p.id}
+                  title={p.name}
+                  className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
+                >
+                  {initials(p.name)}
+                </div>
+              ))}
+            </div>
+            <div className="text-sm">
+              {nameOverride || team.map((p: any) => p.name).join(" + ")}
+            </div>
           </div>
-        ))}
-      </div>
-      <div className="text-sm">
-        {nameOverride || team.map((p: any) => p.name).join(" + ")}
-      </div>
-    </div>
-  );
+          );
 }
 
-function initials(name: string) {
+          function initials(name: string) {
   const parts = name.trim().split(/\s+/);
-  return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+          return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
 }
 
-function computeStandings(
-  mode: string,
-  schedule: any[],
-  players: any[],
-  teams: any[]
-) {
+          function computeStandings(
+          mode: string,
+          schedule: any[],
+          players: any[],
+          teams: any[]
+          ) {
   const table = new Map<string, any>();
 
   const addRow = (id: string, name: string) => {
     if (!table.has(id))
-      table.set(id, {
-        id,
-        name,
-        pa: 0,
-        pj: 0,
-        pg: 0,
-        pe: 0,
-        pp: 0,
-        gf: 0,
-        gc: 0,
-        pts: 0,
+          table.set(id, {
+            id,
+            name,
+            pa: 0,
+          pj: 0,
+          pg: 0,
+          pe: 0,
+          pp: 0,
+          gf: 0,
+          gc: 0,
+          pts: 0,
       });
   };
 
-  if (mode === MODES.INDIVIDUAL) {
-    players.forEach((p) => addRow(p.id, p.name));
+          if (mode === MODES.INDIVIDUAL) {
+            players.forEach((p) => addRow(p.id, p.name));
   } else {
-    teams.forEach((t) => addRow(t.id, t.name));
+            teams.forEach((t) => addRow(t.id, t.name));
   }
 
-  // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
-  const assured = new Map<string, number>();
+          // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
+          const assured = new Map<string, number>();
 
   const incAssured = (id: string) => {
-    assured.set(id, (assured.get(id) || 0) + 1);
+            assured.set(id, (assured.get(id) || 0) + 1);
   };
 
   schedule.forEach((round: any) => {
@@ -1408,12 +1382,12 @@ function computeStandings(
       if (mode === MODES.INDIVIDUAL) {
         // cada jugador tiene 1 partido asegurado por match
         for (const p of m.teamA || []) incAssured(p.id);
-        for (const p of m.teamB || []) incAssured(p.id);
+          for (const p of m.teamB || []) incAssured(p.id);
       } else {
         const teamAId = m.teamIdA || teamKey(m.teamA);
-        const teamBId = m.teamIdB || teamKey(m.teamB);
-        if (teamAId) incAssured(teamAId);
-        if (teamBId) incAssured(teamBId);
+          const teamBId = m.teamIdB || teamKey(m.teamB);
+          if (teamAId) incAssured(teamAId);
+          if (teamBId) incAssured(teamBId);
       }
     });
   });
@@ -1423,18 +1397,18 @@ function computeStandings(
     (matches || []).forEach((m: any) => {
       if (!m.played) return;
 
-      const aGF = m.scoreA || 0;
-      const bGF = m.scoreB || 0;
+          const aGF = m.scoreA || 0;
+          const bGF = m.scoreB || 0;
 
-      if (mode === MODES.INDIVIDUAL) {
+          if (mode === MODES.INDIVIDUAL) {
         for (const p of m.teamA) addRow(p.id, p.name);
-        for (const p of m.teamB) addRow(p.id, p.name);
-        for (const p of m.teamA) upd(table, p.id, aGF, bGF);
-        for (const p of m.teamB) upd(table, p.id, bGF, aGF);
+          for (const p of m.teamB) addRow(p.id, p.name);
+          for (const p of m.teamA) upd(table, p.id, aGF, bGF);
+          for (const p of m.teamB) upd(table, p.id, bGF, aGF);
         if (aGF > bGF) {
           for (const p of m.teamA) win(table, p.id);
           for (const p of m.teamB) loss(table, p.id);
-        } else if (bGF > aGF) {
+          {">"} else if (bGF > aGF) {
           for (const p of m.teamB) win(table, p.id);
           for (const p of m.teamA) loss(table, p.id);
         } else {
@@ -1442,25 +1416,25 @@ function computeStandings(
         }
       } else {
         const teamAId = m.teamIdA || teamKey(m.teamA);
-        const teamBId = m.teamIdB || teamKey(m.teamB);
-        const teamAName =
+          const teamBId = m.teamIdB || teamKey(m.teamB);
+          const teamAName =
           teams.find((t: any) => t.id === teamAId)?.name ||
           m.teamA.map((p: any) => p.name).join(" + ");
-        const teamBName =
+          const teamBName =
           teams.find((t: any) => t.id === teamBId)?.name ||
           m.teamB.map((p: any) => p.name).join(" + ");
-        addRow(teamAId, teamAName);
-        addRow(teamBId, teamBName);
-        upd(table, teamAId, aGF, bGF);
-        upd(table, teamBId, bGF, aGF);
+          addRow(teamAId, teamAName);
+          addRow(teamBId, teamBName);
+          upd(table, teamAId, aGF, bGF);
+          upd(table, teamBId, bGF, aGF);
         if (aGF > bGF) {
-          win(table, teamAId);
+            win(table, teamAId);
           loss(table, teamBId);
-        } else if (bGF > aGF) {
-          win(table, teamBId);
+          {">"} else if (bGF > aGF) {
+            win(table, teamBId);
           loss(table, teamAId);
         } else {
-          draw(table, teamAId);
+            draw(table, teamAId);
           draw(table, teamBId);
         }
       }
@@ -1469,64 +1443,64 @@ function computeStandings(
 
   // ✅ Asignar PA (Partidos Asegurados) a cada fila
   table.forEach((row, id) => {
-    row.pa = assured.get(id) || 0;
+            row.pa = assured.get(id) || 0;
   });
 
-  return Array.from(table.values()).sort(
+          return Array.from(table.values()).sort(
     (x, y) =>
-      y.pts - x.pts ||
-      (y.gf - y.gc) - (x.gf - x.gc) ||
-      y.gf - x.gf
-  );
+          y.pts - x.pts ||
+          (y.gf - y.gc) - (x.gf - x.gc) ||
+          y.gf - x.gf
+          );
 }
 
-function teamKey(players: any[]) {
+          function teamKey(players: any[]) {
   return players
     .map((p) => p.id)
-    .sort()
-    .join("_");
+          .sort()
+          .join("_");
 }
-function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
+          function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
   const r = table.get(id);
-  r.pj += 1;
-  r.gf += gf;
-  r.gc += gc;
-  table.set(id, r);
+          r.pj += 1;
+          r.gf += gf;
+          r.gc += gc;
+          table.set(id, r);
 }
-function win(table: Map<string, any>, id: string) {
+          function win(table: Map<string, any>, id: string) {
   const r = table.get(id);
-  r.pg += 1;
-  r.pts += 3;
-  table.set(id, r);
+          r.pg += 1;
+          r.pts += 3;
+          table.set(id, r);
 }
-function draw(table: Map<string, any>, id: string) {
+          function draw(table: Map<string, any>, id: string) {
   const r = table.get(id);
-  r.pe += 1;
-  r.pts += 1;
-  table.set(id, r);
+          r.pe += 1;
+          r.pts += 1;
+          table.set(id, r);
 }
-function loss(table: Map<string, any>, id: string) {
+          function loss(table: Map<string, any>, id: string) {
   const r = table.get(id);
-  r.pp += 1;
-  table.set(id, r);
+          r.pp += 1;
+          table.set(id, r);
 }
 
-function CalendarIcon() {
+          function CalendarIcon() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-slate-700"
-    >
-      <path
-        d="M7 2v3M17 2v3M4 11h16M4 7h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-slate-700"
+          >
+            <path
+              d="M7 2v3M17 2v3M4 11h16M4 7h16M6 21h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          );
 }
