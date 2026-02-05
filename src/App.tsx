@@ -155,7 +155,7 @@ function generateIndividualSchedule(
       const gamesDiff = gamesCount[a.id] - gamesCount[b.id];
       if (gamesDiff !== 0) return gamesDiff;
 
-      return restCount[a.id] - restCount[b.id];
+      return (restCounts[a.id] || 0) - (restCounts[b.id] || 0);
     });
 
     const usableBlocks = Math.min(Math.floor(pool.length / 4), courts);
@@ -240,9 +240,10 @@ function generateIndividualSchedule(
         for (const y of [b1, b2]) incPair(matchupCounts, x.id, y.id);
 
       matches.push(match);
-    }
-    for (const p of [a1, a2, b1, b2]) {
-      gamesCount[p.id] = (gamesCount[p.id] || 0) + 1;
+
+      for (const p of [a1, a2, b1, b2]) {
+        gamesCount[p.id] = (gamesCount[p.id] || 0) + 1;
+      }
     }
 
 
