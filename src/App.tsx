@@ -488,75 +488,77 @@ export default function App() {
     commitCourts();
 
     if (mode === MODES.TEAMS) {
-      const fullPlan = generateTeamRoundRobin(teams);
-      if (!fullPlan || fullPlan.length === 0) {
-        setSchedule([]);
-        setTeamPlan(null);
-        setTeamRoundIdx(0);
-        return;
-      }
+      // Generar TODOS los emparejamientos posibles (round-robin completo)
+      const allPairings: any[] = [];
 
-      const needed = rounds;
-      const extended: any[] = [];
-      const cycles = Math.ceil(needed / fullPlan.length);
-
-      for (let c = 0; c < cycles; c++) {
-        for (let r = 0; r < fullPlan.length; r++) {
-          if (extended.length >= needed) break;
-
-          const originalPairings = fullPlan[r];
-          const rotated = originalPairings.slice().map((_, idx) => {
-            const newIdx = (idx + c) % originalPairings.length;
-            return originalPairings[newIdx];
-          });
-
-          extended.push(rotated);
+      for (let i = 0; i < teams.length; i++) {
+        for (let j = i + 1; j < teams.length; j++) {
+          allPairings.push([teams[i], teams[j]]);
         }
       }
 
-      setTeamPlan(extended);
-      setTeamRoundIdx(0);
+      // Mezclar para distribución más justa
+      const shuffledPairings = shuffleArray(allPairings);
 
+      // Contador de partidos por equipo
       const gamesCount = new Map<string, number>(
         teams.map((t: any) => [t.id, 0])
       );
 
-      const restCount = new Map<string, number>(
-        teams.map((t: any) => [t.id, 0])
-      );
+      const sched: any[] = [];
 
-      const sched = extended.map((pairings: any[]) => {
-        const playable = pairings.filter(
-          ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
-        );
-        const chosen = pickBalancedMatches(playable, courts, gamesCount);
+      // Generar las rondas necesarias
+      for (let r = 0; r < rounds; r++) {
+        const roundMatches: any[] = [];
+        const usedInRound = new Set<string>();
 
-        const playingIds = new Set(
-          chosen.flatMap(([A, B]) => [A.id, B.id])
-        );
+        // Ordenar emparejamientos por prioridad (menos partidos jugados = mayor prioridad)
+        const sortedPairings = shuffledPairings.slice().sort((a, b) => {
+          const [teamA1, teamA2] = a;
+          const [teamB1, teamB2] = b;
 
-        teams.forEach(t => {
-          if (!playingIds.has(t.id)) {
-            restCount.set(t.id, (restCount.get(t.id) || 0) + 1);
-          }
+          const scoreA = (gamesCount.get(teamA1.id) || 0) + (gamesCount.get(teamA2.id) || 0);
+          const scoreB = (gamesCount.get(teamB1.id) || 0) + (gamesCount.get(teamB2.id) || 0);
+
+          return scoreA - scoreB;
         });
 
-        return chosen.map(([A, B]: any[]) => ({
-          id: uid(),
-          teamA: A.players,
-          teamB: B.players,
-          teamNameA: A.name,   // ✅ AGREGAR
-          teamNameB: B.name,   // ✅ AGREGAR
-          teamIdA: A.id,
-          teamIdB: B.id,
-          scoreA: 0,
-          scoreB: 0,
-          played: false,
-        }));
+        // Seleccionar partidos para esta ronda
+        for (const [teamA, teamB] of sortedPairings) {
+          if (roundMatches.length >= courts) break;
 
-      });
+          // Si alguno ya juega en esta ronda, saltar
+          if (usedInRound.has(teamA.id) || usedInRound.has(teamB.id)) continue;
+
+          // Agregar el partido
+          roundMatches.push({
+            id: uid(),
+            teamA: teamA.players,
+            teamB: teamB.players,
+            teamNameA: teamA.name,
+            teamNameB: teamB.name,
+            teamIdA: teamA.id,
+            teamIdB: teamB.id,
+            scoreA: 0,
+            scoreB: 0,
+            played: false,
+          });
+
+          // Marcar equipos como usados en esta ronda
+          usedInRound.add(teamA.id);
+          usedInRound.add(teamB.id);
+
+          // Incrementar contador de partidos
+          gamesCount.set(teamA.id, (gamesCount.get(teamA.id) || 0) + 1);
+          gamesCount.set(teamB.id, (gamesCount.get(teamB.id) || 0) + 1);
+        }
+
+        sched.push(roundMatches);
+      }
 
       setSchedule(sched);
+      setTeamPlan(null);
+      setTeamRoundIdx(0);
       return;
     }
 
