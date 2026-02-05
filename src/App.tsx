@@ -246,7 +246,6 @@ function generateIndividualSchedule(
       }
     }
 
-
     roundsOut.push({ matches, resting });
   }
 
@@ -573,6 +572,25 @@ export default function App() {
         }
 
         sched.push(roundMatches);
+      }
+
+      // 🔒 Validación dura: nadie puede quedar con 0 partidos
+      const zeroGames = Array.from(gamesCount.entries()).filter(
+        ([_, pj]) => pj === 0
+      );
+
+      if (zeroGames.length > 0) {
+        console.error("Equipos sin partidos:", zeroGames);
+        alert("Error: hay equipos que no disputaron ningún partido. Ajusta rondas o canchas.");
+        return;
+      }
+
+      const values = Array.from(gamesCount.values());
+      const max = Math.max(...values);
+      const min = Math.min(...values);
+
+      if (max - min > 1) {
+        console.warn("Calendario desbalanceado", { min, max });
       }
 
       setSchedule(sched);
