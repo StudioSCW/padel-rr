@@ -508,7 +508,7 @@ export default function App() {
       const sched: any[] = [];
 
       // Calcular el promedio esperado de partidos por equipo
-      const totalSlots = rounds * courts * 2; // Total de "slots" de juego
+      const totalSlots = rounds * courts * 2;
       const avgGamesPerTeam = totalSlots / teams.length;
 
       // Generar las rondas necesarias
@@ -516,23 +516,22 @@ export default function App() {
         const roundMatches: any[] = [];
         const usedInRound = new Set<string>();
 
-        // Calcular el máximo permitido de partidos (promedio + 1)
+        // Calcular el máximo permitido de partidos
         const currentAvg = Array.from(gamesCount.values()).reduce((a, b) => a + b, 0) / teams.length;
-        const maxAllowed = Math.ceil(currentAvg + 1);
+        const maxAllowed = Math.floor(avgGamesPerTeam) + 1;
 
         // Filtrar emparejamientos disponibles
         const availablePairings = allPairings.filter(([teamA, teamB]) => {
           const pairKey = [teamA.id, teamB.id].sort().join('-');
           if (usedPairings.has(pairKey)) return false;
 
-          // No permitir si alguno de los equipos ya tiene demasiados partidos
           const gamesA = gamesCount.get(teamA.id) || 0;
           const gamesB = gamesCount.get(teamB.id) || 0;
 
           return gamesA < maxAllowed && gamesB < maxAllowed;
         });
 
-        // Ordenar por prioridad: equipos con menos partidos primero
+        // Ordenar por prioridad
         const sortedPairings = availablePairings.sort((a, b) => {
           const [teamA1, teamA2] = a;
           const [teamB1, teamB2] = b;
@@ -547,12 +546,10 @@ export default function App() {
         for (const [teamA, teamB] of sortedPairings) {
           if (roundMatches.length >= courts) break;
 
-          // Si alguno ya juega en esta ronda, saltar
           if (usedInRound.has(teamA.id) || usedInRound.has(teamB.id)) continue;
 
           const pairKey = [teamA.id, teamB.id].sort().join('-');
 
-          // Agregar el partido
           roundMatches.push({
             id: uid(),
             teamA: teamA.players,
@@ -566,14 +563,10 @@ export default function App() {
             played: false,
           });
 
-          // Marcar equipos como usados en esta ronda
           usedInRound.add(teamA.id);
           usedInRound.add(teamB.id);
-
-          // Marcar este emparejamiento como usado
           usedPairings.add(pairKey);
 
-          // Incrementar contador de partidos
           gamesCount.set(teamA.id, (gamesCount.get(teamA.id) || 0) + 1);
           gamesCount.set(teamB.id, (gamesCount.get(teamB.id) || 0) + 1);
         }
@@ -583,153 +576,122 @@ export default function App() {
 
       setSchedule(sched);
       setTeamPlan(null);
-      setTeamRoundIdx(
-    
+      setTeamRoundIdx(0);
+      return;
+    }
+
+    // Modo INDIVIDUAL
     const { rounds: rr, history: h } = generateIndividualSchedule(
-        players,
-        rounds,
-        courts,
-        history
-      );
-      setSchedule(rr);
-      setHistory(h);
-    }
+      players,
+      rounds,
+      courts,
+      history
+    );
+    setSchedule(rr);
+    setHistory(h);
+  }
 
-    function updateScore(
-      rIdx: number,
-      mIdx: number,
-      field: "scoreA" | "scoreB",
-      val: string
-    ) {
-      const v = clamp(parseInt(val || "0", 10) || 0, 0, 99);
+  function updateScore(
+    rIdx: number,
+    mIdx: number,
+    field: "scoreA" | "scoreB",
+    val: string
+  ) {
+    const v = clamp(parseInt(val || "0", 10) || 0, 0, 99);
 
-      setSchedule((prev: any[]) =>
-        prev.map((round: any, i: number) => {
-          if (i !== rIdx) return round;
-          if (mode === MODES.TEAMS) {
-            return round.map((m: any, j: number) =>
+    setSchedule((prev: any[]) =>
+      prev.map((round: any, i: number) => {
+        if (i !== rIdx) return round;
+        if (mode === MODES.TEAMS) {
+          return round.map((m: any, j: number) =>
+            j !== mIdx ? m : { ...m, [field]: v, played: true }
+          );
+        } else {
+          return {
+            ...round,
+            matches: round.matches.map((m: any, j: number) =>
               j !== mIdx ? m : { ...m, [field]: v, played: true }
-            );
-          } else {
-            return {
-              ...round,
-              matches: round.matches.map((m: any, j: number) =>
-                j !== mIdx ? m : { ...m, [field]: v, played: true }
-              ),
-            };
-          }
-        })
-      );
-    }
+            ),
+          };
+        }
+      })
+    );
+  }
 
-    function resetTable() {
-      setSchedule((prev: any[]) =>
-        prev.map((round: any) => {
-          if (mode === MODES.TEAMS) {
-            return round.map((m: any) => ({
+  function resetTable() {
+    setSchedule((prev: any[]) =>
+      prev.map((round: any) => {
+        if (mode === MODES.TEAMS) {
+          return round.map((m: any) => ({
+            ...m,
+            scoreA: 0,
+            scoreB: 0,
+            played: false,
+          }));
+        } else {
+          return {
+            ...round,
+            matches: round.matches.map((m: any) => ({
               ...m,
               scoreA: 0,
               scoreB: 0,
               played: false,
-            }));
-          } else {
-            return {
-              ...round,
-              matches: round.matches.map((m: any) => ({
-                ...m,
-                scoreA: 0,
-                scoreB: 0,
-                played: false,
-              })),
-            };
-          }
-        })
-      );
-    }
+            })),
+          };
+        }
+      })
+    );
+  }
 
+  function resetRoundScores(rIdx: number) {
+    setSchedule((prev: any[]) =>
+      prev.map((round: any, i: number) => {
+        if (i !== rIdx) return round;
 
-    function resetRoundScores(rIdx: number) {
-      setSchedule((prev: any[]) =>
-        prev.map((round: any, i: number) => {
-          if (i !== rIdx) return round;
-
-          if (mode === MODES.TEAMS) {
-            // TEAMS: round es un array de partidos
-            return round.map((m: any) => ({
+        if (mode === MODES.TEAMS) {
+          return round.map((m: any) => ({
+            ...m,
+            scoreA: 0,
+            scoreB: 0,
+          }));
+        } else {
+          return {
+            ...round,
+            matches: round.matches.map((m: any) => ({
               ...m,
               scoreA: 0,
               scoreB: 0,
-            }));
-          } else {
-            // INDIVIDUAL: round = { matches, resting }
-            return {
-              ...round,
-              matches: round.matches.map((m: any) => ({
-                ...m,
-                scoreA: 0,
-                scoreB: 0,
-              })),
-            };
-          }
-        })
+            })),
+          };
+        }
+      })
+    );
+  }
+
+  function randomizeNextRound() {
+    commitRounds();
+    commitCourts();
+
+    if (mode === MODES.INDIVIDUAL) {
+      const { rounds: rr, history: h } = generateIndividualSchedule(
+        players,
+        1,
+        courts,
+        history
       );
+      setSchedule((prev: any[]) => [...prev, rr[0]]);
+      setHistory(h);
+      return;
     }
 
-    function randomizeNextRound() {
-      commitRounds();
-      commitCourts();
+    if (!teamPlan || teamPlan.length === 0) {
+      const fullPlan = generateTeamRoundRobin(teams);
+      if (!fullPlan || fullPlan.length === 0) return;
 
-      if (mode === MODES.INDIVIDUAL) {
-        const { rounds: rr, history: h } = generateIndividualSchedule(
-          players,
-          1,
-          courts,
-          history
-        );
-        setSchedule((prev: any[]) => [...prev, rr[0]]);
-        setHistory(h);
-        return;
-      }
+      setTeamPlan(fullPlan);
+      setTeamRoundIdx(0);
 
-      if (!teamPlan || teamPlan.length === 0) {
-        const fullPlan = generateTeamRoundRobin(teams);
-        if (!fullPlan || fullPlan.length === 0) return;
-
-        setTeamPlan(fullPlan);
-        setTeamRoundIdx(0);
-
-        const pairings = fullPlan[0] || [];
-        const playable = pairings.filter(
-          ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
-        );
-
-        const gamesCount = buildGamesCountFromSchedule(
-          teams,
-          schedule,
-          MODES.TEAMS
-        );
-        const chosen = pickBalancedMatches(playable, courts, gamesCount);
-
-        const schedRound = chosen.map(([A, B]: any[]) => ({
-          id: uid(),
-          teamA: A.players,
-          teamB: B.players,
-          teamNameA: A.name,
-          teamNameB: B.name,
-          teamIdA: A.id,
-          teamIdB: B.id,
-          scoreA: 0,
-          scoreB: 0,
-          played: false
-        }));
-
-        setSchedule((prev: any[]) => [...prev, schedRound]);
-        setTeamRoundIdx(1 % fullPlan.length);
-        return;
-      }
-
-      const idx = teamRoundIdx % teamPlan.length;
-      const pairings = teamPlan[idx] || [];
+      const pairings = fullPlan[0] || [];
       const playable = pairings.filter(
         ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
       );
@@ -755,232 +717,345 @@ export default function App() {
       }));
 
       setSchedule((prev: any[]) => [...prev, schedRound]);
-      setTeamRoundIdx((n) => n + 1);
+      setTeamRoundIdx(1 % fullPlan.length);
+      return;
     }
 
-    function exportScheduleCSV() {
-      if (!schedule || schedule.length === 0) {
-        alert("No hay calendario para exportar todavía.");
-        return;
-      }
+    const idx = teamRoundIdx % teamPlan.length;
+    const pairings = teamPlan[idx] || [];
+    const playable = pairings.filter(
+      ([A, B]: any[]) => A.id !== "BYE" && B.id !== "BYE"
+    );
 
-      const headers = [
-        "Ronda",
-        "Cancha",
-        "Equipo A",
-        "Equipo B",
-        "Score A",
-        "Score B",
-        "Jugado",
-      ];
+    const gamesCount = buildGamesCountFromSchedule(
+      teams,
+      schedule,
+      MODES.TEAMS
+    );
+    const chosen = pickBalancedMatches(playable, courts, gamesCount);
 
-      const rows: any[] = [];
+    const schedRound = chosen.map(([A, B]: any[]) => ({
+      id: uid(),
+      teamA: A.players,
+      teamB: B.players,
+      teamNameA: A.name,
+      teamNameB: B.name,
+      teamIdA: A.id,
+      teamIdB: B.id,
+      scoreA: 0,
+      scoreB: 0,
+      played: false
+    }));
 
-      schedule.forEach((round: any, rIdx: number) => {
-        const matches = mode === MODES.TEAMS ? (round as any[]) : round.matches;
+    setSchedule((prev: any[]) => [...prev, schedRound]);
+    setTeamRoundIdx((n) => n + 1);
+  }
 
-        (matches || []).forEach((m: any, mIdx: number) => {
-          const nameA =
-            m.teamNameA ||
-            (m.teamA ? m.teamA.map((p: any) => p.name).join(" + ") : "—");
+  function exportScheduleCSV() {
+    if (!schedule || schedule.length === 0) {
+      alert("No hay calendario para exportar todavía.");
+      return;
+    }
 
-          const nameB =
-            m.teamNameB ||
-            (m.teamB ? m.teamB.map((p: any) => p.name).join(" + ") : "—");
+    const headers = [
+      "Ronda",
+      "Cancha",
+      "Equipo A",
+      "Equipo B",
+      "Score A",
+      "Score B",
+      "Jugado",
+    ];
 
-          rows.push([
-            rIdx + 1,
-            mIdx + 1,
-            nameA,
-            nameB,
-            m.scoreA ?? 0,
-            m.scoreB ?? 0,
-            m.played ? "SI" : "NO",
-          ]);
-        });
+    const rows: any[] = [];
+
+    schedule.forEach((round: any, rIdx: number) => {
+      const matches = mode === MODES.TEAMS ? (round as any[]) : round.matches;
+
+      (matches || []).forEach((m: any, mIdx: number) => {
+        const nameA =
+          m.teamNameA ||
+          (m.teamA ? m.teamA.map((p: any) => p.name).join(" + ") : "—");
+
+        const nameB =
+          m.teamNameB ||
+          (m.teamB ? m.teamB.map((p: any) => p.name).join(" + ") : "—");
+
+        rows.push([
+          rIdx + 1,
+          mIdx + 1,
+          nameA,
+          nameB,
+          m.scoreA ?? 0,
+          m.scoreB ?? 0,
+          m.played ? "SI" : "NO",
+        ]);
       });
+    });
 
-      const lines = [headers, ...rows]
-        .map((cols) =>
-          cols
-            .map((v) => {
-              const s = String(v ?? "");
-              return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-            })
-            .join(",")
-        )
-        .join("\n");
+    const lines = [headers, ...rows]
+      .map((cols) =>
+        cols
+          .map((v) => {
+            const s = String(v ?? "");
+            return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+          })
+          .join(",")
+      )
+      .join("\n");
 
-      const blob = new Blob([lines], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const date = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = `padel_calendario_${date}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+    const blob = new Blob([lines], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const date = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `padel_calendario_${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function newTournament(opts: { hardResetPlayersTeams?: boolean } = {}) {
+    const { hardResetPlayersTeams = true } = opts;
+
+    try {
+      localStorage.removeItem(STORE_KEY);
+    } catch { }
+
+    setTournamentId(uid());
+    setSchedule([]);
+    setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
+
+    if (hardResetPlayersTeams) {
+      setPlayers([]);
+      setTeams([]);
     }
 
-    function newTournament(opts: { hardResetPlayersTeams?: boolean } = {}) {
-      const { hardResetPlayersTeams = true } = opts;
+    alert("¡Nuevo torneo creado! ✅");
+  }
+  // ---------- UI ----------
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="sticky top-0 z-40 backdrop-blur bg-white/75 border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Trophy className="w-6 h-6" />
+          <h1 className="text-xl font-bold">Padel Round Robin – Velno Edition</h1>
+        </div>
+      </header>
 
-      try {
-        localStorage.removeItem(STORE_KEY);
-      } catch { }
+      <main className="max-w-6xl mx-auto px-4 py-6 grid md:grid-cols-3 gap-6">
+        {/* IZQ: Gestión */}
+        <section className="md:col-span-1">
+          <div className="bg-white rounded-2xl shadow p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              <h2 className="font-semibold">Gestión General</h2>
+            </div>
 
-      setTournamentId(uid());
-      setSchedule([]);
-      setHistory({ teammateCounts: {}, matchupCounts: {}, restCounts: {} });
+            <div className="flex gap-2 text-sm">
+              <button
+                onClick={() => {
+                  setSchedule([]);
+                  setMode(MODES.INDIVIDUAL);
+                }}
+                className={`px-3 py-1.5 rounded-xl border ${mode === MODES.INDIVIDUAL
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-900 border-slate-300"
+                  }`}
+              >
+                Individual
+              </button>
 
-      if (hardResetPlayersTeams) {
-        setPlayers([]);
-        setTeams([]);
-      }
+              <button
+                onClick={() => {
+                  setSchedule([]);
+                  setMode(MODES.TEAMS);
+                }}
+                className={`px-3 py-1.5 rounded-xl border ${mode === MODES.TEAMS
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-900 border-slate-300"
+                  }`}
+              >
+                Equipos fijos
+              </button>
+            </div>
 
-      alert("¡Nuevo torneo creado! ✅");
-    }
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-sm">
+                Rondas
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={roundsDraft}
+                  onChange={(e) => setRoundsDraft(e.target.value)}
+                  onBlur={commitRounds}
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                  placeholder="5"
+                />
+              </label>
+              <label className="text-sm">
+                Canchas
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={courtsDraft}
+                  onChange={(e) => setCourtsDraft(e.target.value)}
+                  onBlur={commitCourts}
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                  placeholder="2"
+                />
+              </label>
+            </div>
 
-    // ---------- UI ----------
-    return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="sticky top-0 z-40 backdrop-blur bg-white/75 border-b border-slate-200">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-            <Trophy className="w-6 h-6" />
-            <h1 className="text-xl font-bold">Padel Round Robin – Velno Edition</h1>
-          </div>
-        </header>
+            <div className="space-y-2">
+              {/* Nuevo torneo completo (borra todo) */}
+              <button
+                onClick={() => newTournament({ hardResetPlayersTeams: true })}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white"
+              >
+                <PlayCircle className="w-4 h-4" />
+                Nuevo torneo (todo)
+              </button>
 
-        <main className="max-w-6xl mx-auto px-4 py-6 grid md:grid-cols-3 gap-6">
-          {/* IZQ: Gestión */}
-          <section className="md:col-span-1">
-            <div className="bg-white rounded-2xl shadow p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                <h2 className="font-semibold">Gestión General</h2>
+              {/* Solo resetear calendario y resultados, manteniendo jugadores/equipos */}
+              <button
+                onClick={() => newTournament({ hardResetPlayersTeams: false })}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-indigo-200 text-indigo-700 bg-indigo-50"
+              >
+                <Shuffle className="w-4 h-4" />
+                Reiniciar calendario
+              </button>
+
+              <p className="text-xs text-slate-500">
+                <b>Nuevo torneo (todo):</b> borra jugadores, equipos, calendario y tabla.
+                <br />
+                <b>Reiniciar calendario:</b> genera un nuevo calendario manteniendo los equipos.
+              </p>
+            </div>
+
+            {mode === MODES.INDIVIDUAL ? (
+              <div className="space-y-3">
+                <div className="flex items-end gap-2">
+                  <label className="flex-1 text-sm">
+                    Agregar jugador
+                    <input
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") addPlayer();
+                      }}
+                      placeholder="Nombre"
+                      className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                  <button
+                    onClick={addPlayer}
+                    className="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:opacity-90"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Jugadores: {players.length}</span>
+                  <button
+                    onClick={clearAll}
+                    className="inline-flex items-center gap-1 text-red-600 hover:underline"
+                  >
+                    <Trash2 className="w-4 h-4" /> Limpiar todo
+                  </button>
+                </div>
+                <ul className="max-h-48 overflow-auto divide-y border rounded-xl">
+                  {players.map((p) => (
+                    <li
+                      key={p.id}
+                      className="px-3 py-2 flex items-center justify-between"
+                    >
+                      <span>{p.name}</span>
+                      <button
+                        onClick={() => removePlayer(p.id)}
+                        className="text-slate-400 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              <div className="flex gap-2 text-sm">
-                <button
-                  onClick={() => {
-                    setSchedule([]);
-                    setMode(MODES.INDIVIDUAL);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl border ${mode === MODES.INDIVIDUAL
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-900 border-slate-300"
-                    }`}
-                >
-                  Individual
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSchedule([]);
-                    setMode(MODES.TEAMS);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl border ${mode === MODES.TEAMS
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-900 border-slate-300"
-                    }`}
-                >
-                  Equipos fijos
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <label className="text-sm">
-                  Rondas
-                  <input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={roundsDraft}
-                    onChange={(e) => setRoundsDraft(e.target.value)}
-                    onBlur={commitRounds}
-                    className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-                    placeholder="5"
-                  />
-                </label>
-                <label className="text-sm">
-                  Canchas
-                  <input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={courtsDraft}
-                    onChange={(e) => setCourtsDraft(e.target.value)}
-                    onBlur={commitCourts}
-                    className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-                    placeholder="2"
-                  />
-                </label>
-              </div>
-
-              <div className="space-y-2">
-                {/* Nuevo torneo completo (borra todo) */}
-                <button
-                  onClick={() => newTournament({ hardResetPlayersTeams: true })}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white"
-                >
-                  <PlayCircle className="w-4 h-4" />
-                  Nuevo torneo (todo)
-                </button>
-
-                {/* Solo resetear calendario y resultados, manteniendo jugadores/equipos */}
-                <button
-                  onClick={() => newTournament({ hardResetPlayersTeams: false })}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-indigo-200 text-indigo-700 bg-indigo-50"
-                >
-                  <Shuffle className="w-4 h-4" />
-                  Reiniciar calendario
-                </button>
-
-                <p className="text-xs text-slate-500">
-                  <b>Nuevo torneo (todo):</b> borra jugadores, equipos, calendario y tabla.
-                  <br />
-                  <b>Reiniciar calendario:</b> genera un nuevo calendario manteniendo los equipos.
-                </p>
-              </div>
-
-              {mode === MODES.INDIVIDUAL ? (
-                <div className="space-y-3">
-                  <div className="flex items-end gap-2">
-                    <label className="flex-1 text-sm">
-                      Agregar jugador
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-slate-700">
+                    Agregar equipo / pareja
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    <input
+                      value={teamNameInput}
+                      onChange={(e) => setTeamNameInput(e.target.value)}
+                      placeholder="Nombre del equipo (opcional)"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
                       <input
-                        value={nameInput}
-                        onChange={(e) => setNameInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") addPlayer();
-                        }}
-                        placeholder="Nombre"
-                        className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+                        value={teamP1Input}
+                        onChange={(e) => setTeamP1Input(e.target.value)}
+                        placeholder="Jugador 1"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                       />
-                    </label>
+                      <input
+                        value={teamP2Input}
+                        onChange={(e) => setTeamP2Input(e.target.value)}
+                        placeholder="Jugador 2"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                      />
+                    </div>
                     <button
-                      onClick={addPlayer}
-                      className="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:opacity-90"
+                      onClick={addTeamManual}
+                      className="w-full mt-1 px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 flex items-center justify-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
+                      Agregar equipo
                     </button>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Jugadores: {players.length}</span>
+                </div>
+
+                <div className="text-sm text-slate-600 border-t pt-3">
+                  También puedes crear equipos desde la lista de jugadores (pares
+                  aleatorios).
+                  <div className="mt-2 flex gap-2">
                     <button
-                      onClick={clearAll}
-                      className="inline-flex items-center gap-1 text-red-600 hover:underline"
+                      onClick={createTeamsAuto}
+                      className="px-3 py-2 rounded-xl bg-slate-900 text-white text-sm"
                     >
-                      <Trash2 className="w-4 h-4" /> Limpiar todo
+                      Formar equipos
+                    </button>
+                    <button
+                      onClick={() => setTeams([])}
+                      className="px-3 py-2 rounded-xl border text-sm"
+                    >
+                      Reiniciar
                     </button>
                   </div>
-                  <ul className="max-h-48 overflow-auto divide-y border rounded-xl">
-                    {players.map((p) => (
+                </div>
+
+                <div className="space-y-2">
+                  {teams.length === 0 && (
+                    <div className="text-sm text-slate-500">No hay equipos aún.</div>
+                  )}
+                  <ul className="space-y-2 max-h-48 overflow-auto pr-1">
+                    {teams.map((t) => (
                       <li
-                        key={p.id}
-                        className="px-3 py-2 flex items-center justify-between"
+                        key={t.id}
+                        className="border rounded-xl p-2 flex items-center justify-between gap-2"
                       >
-                        <span>{p.name}</span>
+                        <div>
+                          <div className="font-medium text-sm">{t.name}</div>
+                          <div className="text-xs text-slate-600">
+                            {t.players.map((p: any) => p.name).join(" · ")}
+                          </div>
+                        </div>
                         <button
-                          onClick={() => removePlayer(p.id)}
+                          onClick={() => removeTeam(t.id)}
                           className="text-slate-400 hover:text-red-600"
+                          title="Eliminar equipo"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -988,570 +1063,487 @@ export default function App() {
                     ))}
                   </ul>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-slate-700">
-                      Agregar equipo / pareja
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <input
-                        value={teamNameInput}
-                        onChange={(e) => setTeamNameInput(e.target.value)}
-                        placeholder="Nombre del equipo (opcional)"
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          value={teamP1Input}
-                          onChange={(e) => setTeamP1Input(e.target.value)}
-                          placeholder="Jugador 1"
-                          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                        />
-                        <input
-                          value={teamP2Input}
-                          onChange={(e) => setTeamP2Input(e.target.value)}
-                          placeholder="Jugador 2"
-                          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <button
-                        onClick={addTeamManual}
-                        className="w-full mt-1 px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 flex items-center justify-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Agregar equipo
-                      </button>
-                    </div>
-                  </div>
+              </div>
+            )}
 
-                  <div className="text-sm text-slate-600 border-t pt-3">
-                    También puedes crear equipos desde la lista de jugadores (pares
-                    aleatorios).
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        onClick={createTeamsAuto}
-                        className="px-3 py-2 rounded-xl bg-slate-900 text-white text-sm"
-                      >
-                        Formar equipos
-                      </button>
-                      <button
-                        onClick={() => setTeams([])}
-                        className="px-3 py-2 rounded-xl border text-sm"
-                      >
-                        Reiniciar
-                      </button>
-                    </div>
-                  </div>
+            <div className="pt-2 flex gap-2">
+              <button
+                disabled={!canGenerate}
+                onClick={generateSchedule}
+                className={`flex-1 px-4 py-2 rounded-xl text-white ${canGenerate ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-300"
+                  }`}
+              >
+                <PlayCircle className="inline w-4 h-4 mr-2" /> Generar
+              </button>
+              {hasUnnamedTeams && (
+                <div className="mb-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  Completa el nombre de todos los equipos antes de generar el calendario
+                </div>
+              )}
+              <button
+                onClick={randomizeNextRound}
+                disabled={hasUnnamedTeams}
+                className={`px-4 py-2 rounded text-white ${hasUnnamedTeams
+                  ? "bg-slate-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+                  }`}
+              >
+                Generar siguiente ronda
+              </button>
 
-                  <div className="space-y-2">
-                    {teams.length === 0 && (
-                      <div className="text-sm text-slate-500">No hay equipos aún.</div>
-                    )}
-                    <ul className="space-y-2 max-h-48 overflow-auto pr-1">
-                      {teams.map((t) => (
-                        <li
-                          key={t.id}
-                          className="border rounded-xl p-2 flex items-center justify-between gap-2"
-                        >
-                          <div>
-                            <div className="font-medium text-sm">{t.name}</div>
-                            <div className="text-xs text-slate-600">
-                              {t.players.map((p: any) => p.name).join(" · ")}
-                            </div>
-                          </div>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-white rounded-2xl shadow p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5" />
+              <h3 className="font-semibold">Pistas y formato</h3>
+            </div>
+            <p className="text-sm text-slate-600">
+              En modo <b>Individual</b>, cada ronda crea parejas nuevas procurando no
+              repetir compañeros u oponentes. En <b>Equipos fijos</b> se usa round-robin
+              clásico.
+            </p>
+          </div>
+        </section>
+
+        {/* DER: Calendario + Marcadores */}
+        <section className="md:col-span-2 space-y-6">
+          <div className="bg-white rounded-2xl shadow p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarIcon />
+              <h2 className="font-semibold">Calendario y Marcadores</h2>
+            </div>
+
+            {schedule.length === 0 ? (
+              <div className="text-sm text-slate-500">
+                Genera tu primera ronda para ver los partidos.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {schedule.map((round: any, rIdx: number) => {
+                  const matches = (mode === MODES.TEAMS ? (round as any[]) : round.matches) || [];
+
+                  const playingIds = new Set(
+                    matches.flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
+                  );
+                  const restingTeams = mode === MODES.TEAMS
+                    ? teams.filter((t: any) => !playingIds.has(t.id))
+                    : [];
+
+                  return (
+                    <div key={rIdx} className="border rounded-2xl p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="font-semibold">Ronda {rIdx + 1}</div>
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={() => removeTeam(t.id)}
+                            onClick={() => resetRoundScores(rIdx)}
+                            className="text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                          >
+                            Reiniciar marcadores
+                          </button>
+                          <button
+                            onClick={() => setSchedule((prev: any[]) => prev.filter((_, i) => i !== rIdx))}
                             className="text-slate-400 hover:text-red-600"
-                            title="Eliminar equipo"
+                            title="Eliminar ronda"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2 flex gap-2">
-                <button
-                  disabled={!canGenerate}
-                  onClick={generateSchedule}
-                  className={`flex-1 px-4 py-2 rounded-xl text-white ${canGenerate ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-300"
-                    }`}
-                >
-                  <PlayCircle className="inline w-4 h-4 mr-2" /> Generar
-                </button>
-                {hasUnnamedTeams && (
-                  <div className="mb-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
-                    Completa el nombre de todos los equipos antes de generar el calendario
-                  </div>
-                )}
-                <button
-                  onClick={randomizeNextRound}
-                  disabled={hasUnnamedTeams}
-                  className={`px-4 py-2 rounded text-white ${hasUnnamedTeams
-                    ? "bg-slate-400 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-700"
-                    }`}
-                >
-                  Generar siguiente ronda
-                </button>
-
-              </div>
-            </div>
-
-            <div className="mt-6 bg-white rounded-2xl shadow p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-5 h-5" />
-                <h3 className="font-semibold">Pistas y formato</h3>
-              </div>
-              <p className="text-sm text-slate-600">
-                En modo <b>Individual</b>, cada ronda crea parejas nuevas procurando no
-                repetir compañeros u oponentes. En <b>Equipos fijos</b> se usa round-robin
-                clásico.
-              </p>
-            </div>
-          </section>
-
-          {/* DER: Calendario + Marcadores */}
-          <section className="md:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CalendarIcon />
-                <h2 className="font-semibold">Calendario y Marcadores</h2>
-              </div>
-
-              {schedule.length === 0 ? (
-                <div className="text-sm text-slate-500">
-                  Genera tu primera ronda para ver los partidos.
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {schedule.map((round: any, rIdx: number) => {
-                    const matches = (mode === MODES.TEAMS ? (round as any[]) : round.matches) || [];
-
-                    const playingIds = new Set(
-                      matches.flatMap((m: any) => [m.teamIdA, m.teamIdB]).filter(Boolean)
-                    );
-                    const restingTeams = mode === MODES.TEAMS
-                      ? teams.filter((t: any) => !playingIds.has(t.id))
-                      : [];
-
-                    return (
-                      <div key={rIdx} className="border rounded-2xl p-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="font-semibold">Ronda {rIdx + 1}</div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => resetRoundScores(rIdx)}
-                              className="text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            >
-                              Reiniciar marcadores
-                            </button>
-                            <button
-                              onClick={() => setSchedule((prev: any[]) => prev.filter((_, i) => i !== rIdx))}
-                              className="text-slate-400 hover:text-red-600"
-                              title="Eliminar ronda"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
                         </div>
+                      </div>
 
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {matches.length === 0 && (
-                            <div className="text-sm text-slate-500">
-                              No hay partidos para esta ronda.
-                            </div>
-                          )}
-                          {matches.map((m: any, mIdx: number) => {
-                            const liveNameA = mode === MODES.TEAMS
-                              ? teams.find((t: any) => t.id === m.teamIdA)?.name
-                              : undefined;
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {matches.length === 0 && (
+                          <div className="text-sm text-slate-500">
+                            No hay partidos para esta ronda.
+                          </div>
+                        )}
+                        {matches.map((m: any, mIdx: number) => {
+                          const liveNameA = mode === MODES.TEAMS
+                            ? teams.find((t: any) => t.id === m.teamIdA)?.name
+                            : undefined;
 
-                            const liveNameB = mode === MODES.TEAMS
-                              ? teams.find((t: any) => t.id === m.teamIdB)?.name
-                              : undefined;
+                          const liveNameB = mode === MODES.TEAMS
+                            ? teams.find((t: any) => t.id === m.teamIdB)?.name
+                            : undefined;
 
-                            return (
-                              <div key={m.id} className="border rounded-xl p-3">
-                                <div className="text-xs text-slate-500 mb-1">
-                                  Cancha {mIdx + 1}
+                          return (
+                            <div key={m.id} className="border rounded-xl p-3">
+                              <div className="text-xs text-slate-500 mb-1">
+                                Cancha {mIdx + 1}
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <TeamLabel
+                                    team={m.teamA}
+                                    nameOverride={liveNameA || m.teamNameA}
+                                  />
+                                  <TeamLabel
+                                    team={m.teamB}
+                                    nameOverride={liveNameB || m.teamNameB}
+                                  />
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <TeamLabel
-                                      team={m.teamA}
-                                      nameOverride={liveNameA || m.teamNameA}
-                                    />
-                                    <TeamLabel
-                                      team={m.teamB}
-                                      nameOverride={liveNameB || m.teamNameB}
-                                    />
-                                  </div>
-
-                                  <div className="w-28 grid grid-cols-2 gap-2 text-center">
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      max={99}
-                                      value={m.scoreA}
-                                      onChange={(e) => updateScore(rIdx, mIdx, "scoreA", e.target.value)}
-                                      className="rounded-xl border px-2 py-1"
-                                    />
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      max={99}
-                                      value={m.scoreB}
-                                      onChange={(e) => updateScore(rIdx, mIdx, "scoreB", e.target.value)}
-                                      className="rounded-xl border px-2 py-1"
-                                    />
-                                  </div>
+                                <div className="w-28 grid grid-cols-2 gap-2 text-center">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={99}
+                                    value={m.scoreA}
+                                    onChange={(e) => updateScore(rIdx, mIdx, "scoreA", e.target.value)}
+                                    className="rounded-xl border px-2 py-1"
+                                  />
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={99}
+                                    value={m.scoreB}
+                                    onChange={(e) => updateScore(rIdx, mIdx, "scoreB", e.target.value)}
+                                    className="rounded-xl border px-2 py-1"
+                                  />
                                 </div>
                               </div>
-                            );
-                          })}
+                            </div>
+                          );
+                        })}
 
-                          {mode === MODES.TEAMS && restingTeams.length > 0 && (
+                        {mode === MODES.TEAMS && restingTeams.length > 0 && (
+                          <div className="mt-3 text-sm text-slate-600">
+                            <div className="font-medium">Descansan:</div>
+                            <ul className="list-disc pl-5">
+                              {restingTeams.map((t: any) => (
+                                <li key={t.id}>{t.name}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {mode === MODES.INDIVIDUAL &&
+                          round.resting &&
+                          round.resting.length > 0 && (
                             <div className="mt-3 text-sm text-slate-600">
                               <div className="font-medium">Descansan:</div>
                               <ul className="list-disc pl-5">
-                                {restingTeams.map((t: any) => (
-                                  <li key={t.id}>{t.name}</li>
+                                {round.resting.map((p: any) => (
+                                  <li key={p.id}>{p.name}</li>
                                 ))}
                               </ul>
                             </div>
                           )}
-
-                          {mode === MODES.INDIVIDUAL &&
-                            round.resting &&
-                            round.resting.length > 0 && (
-                              <div className="mt-3 text-sm text-slate-600">
-                                <div className="font-medium">Descansan:</div>
-                                <ul className="list-disc pl-5">
-                                  {round.resting.map((p: any) => (
-                                    <li key={p.id}>{p.name}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
-              {/* ===== Tabla General + Export ===== */}
-              <div className="bg-white rounded-2xl shadow p-4 mt-6">
-                <div className="flex gap-2">
-                  <button
-                    onClick={resetTable}
-                    className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
-                    title="Reinicia todos los marcadores y deja la tabla en cero"
+            {/* ===== Tabla General + Export ===== */}
+            <div className="bg-white rounded-2xl shadow p-4 mt-6">
+              <div className="flex gap-2">
+                <button
+                  onClick={resetTable}
+                  className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm"
+                  title="Reinicia todos los marcadores y deja la tabla en cero"
+                >
+                  Reiniciar tabla
+                </button>
+
+                <button
+                  disabled={!schedule || schedule.length === 0}
+                  onClick={exportScheduleCSV}
+                  className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    }`}
+                >
+                  Descargar calendario (CSV)
+                </button>
+              </div>
+
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  {mode === MODES.TEAMS
+                    ? `Equipos: ${teams.length}`
+                    : `Jugadores: ${players.length}`}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  Rondas generadas: {schedule.length}
+                </span>
+
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                  Canchas: {courts}
+                </span>
+
+                {mode === MODES.TEAMS && gamesBalanceInfo && (
+                  <span
+                    className={
+                      "inline-flex items-center rounded-full px-2 py-0.5 border " +
+                      (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
+                        ? "border-amber-300 bg-amber-50 text-amber-700"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-700")
+                    }
                   >
-                    Reiniciar tabla
-                  </button>
-
-                  <button
-                    disabled={!schedule || schedule.length === 0}
-                    onClick={exportScheduleCSV}
-                    className={`px-3 py-1.5 rounded-xl text-sm ${schedule && schedule.length > 0
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-200 text-slate-500 cursor-not-allowed"
-                      }`}
-                  >
-                    Descargar calendario (CSV)
-                  </button>
-                </div>
-
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    {mode === MODES.TEAMS ? "Modo: Equipos fijos" : "Modo: Individual"}
+                    PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
                   </span>
-
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    {mode === MODES.TEAMS
-                      ? `Equipos: ${teams.length}`
-                      : `Jugadores: ${players.length}`}
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    Rondas generadas: {schedule.length}
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
-                    Canchas: {courts}
-                  </span>
-
-                  {mode === MODES.TEAMS && gamesBalanceInfo && (
-                    <span
-                      className={
-                        "inline-flex items-center rounded-full px-2 py-0.5 border " +
-                        (gamesBalanceInfo.max - gamesBalanceInfo.min > 1
-                          ? "border-amber-300 bg-amber-50 text-amber-700"
-                          : "border-emerald-200 bg-emerald-50 text-emerald-700")
-                      }
-                    >
-                      PJ por equipo: {gamesBalanceInfo.min}–{gamesBalanceInfo.max}
-                    </span>
-                  )}
-                </div>
-
-                {standings.length === 0 ? (
-                  <div className="text-sm text-slate-500">
-                    Juega o genera rondas para ver la tabla.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="text-left text-slate-500 text-sm">
-                        <tr>
-                          <th className="py-2 pr-3">Pos</th>
-                          <th className="py-2 pr-3">Nombre</th>
-                          <th className="py-2 pr-3">PA</th>
-                          <th className="py-2 pr-3 text-center">⏳</th>
-                          <th className="py-2 pr-3">PJ</th>
-                          <th className="py-2 pr-3">PG</th>
-                          <th className="py-2 pr-3">PE</th>
-                          <th className="py-2 pr-3">PP</th>
-                          <th className="py-2 pr-3">GF</th>
-                          <th className="py-2 pr-3">GC</th>
-                          <th className="py-2 pr-3">DG</th>
-                          <th className="py-2 pr-3">Pts</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {standings.map((r: any, i: number) => {
-                          const pa = r.pa ?? 0;
-                          const pj = r.pj ?? 0;
-                          const faltan = Math.max(0, pa - pj);
-
-                          return (
-                            <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
-                              <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
-
-                              <td className="py-2 pr-3 font-medium">
-                                {r.name ?? r.teamName ?? "—"}
-                              </td>
-
-                              <td className="py-2 pr-3 text-slate-400 text-sm">{pa}</td>
-
-                              <td className="py-2 pr-3 text-center">
-                                {faltan > 0 ? (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
-                                    {faltan}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                                    ✓
-                                  </span>
-                                )}
-                              </td>
-
-                              <td className="py-2 pr-3">{pj}</td>
-                              <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
-                              <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
-                              <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
-                              <td className="py-2 pr-3">{r.gf ?? 0}</td>
-                              <td className="py-2 pr-3">{r.gc ?? 0}</td>
-                              <td className="py-2 pr-3 text-slate-600">
-                                {(r.gf ?? 0) - (r.gc ?? 0)}
-                              </td>
-                              <td className="py-2 pr-3 font-semibold">
-                                {r.pts ?? r.points ?? 0}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
                 )}
               </div>
+
+              {standings.length === 0 ? (
+                <div className="text-sm text-slate-500">
+                  Juega o genera rondas para ver la tabla.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="text-left text-slate-500 text-sm">
+                      <tr>
+                        <th className="py-2 pr-3">Pos</th>
+                        <th className="py-2 pr-3">Nombre</th>
+                        <th className="py-2 pr-3">PA</th>
+                        <th className="py-2 pr-3 text-center">⏳</th>
+                        <th className="py-2 pr-3">PJ</th>
+                        <th className="py-2 pr-3">PG</th>
+                        <th className="py-2 pr-3">PE</th>
+                        <th className="py-2 pr-3">PP</th>
+                        <th className="py-2 pr-3">GF</th>
+                        <th className="py-2 pr-3">GC</th>
+                        <th className="py-2 pr-3">DG</th>
+                        <th className="py-2 pr-3">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standings.map((r: any, i: number) => {
+                        const pa = r.pa ?? 0;
+                        const pj = r.pj ?? 0;
+                        const faltan = Math.max(0, pa - pj);
+
+                        return (
+                          <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
+                            <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
+
+                            <td className="py-2 pr-3 font-medium">
+                              {r.name ?? r.teamName ?? "—"}
+                            </td>
+
+                            <td className="py-2 pr-3 text-slate-400 text-sm">{pa}</td>
+
+                            <td className="py-2 pr-3 text-center">
+                              {faltan > 0 ? (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                                  {faltan}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                  ✓
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="py-2 pr-3">{pj}</td>
+                            <td className="py-2 pr-3">{(r.pg ?? r.win) ?? 0}</td>
+                            <td className="py-2 pr-3">{(r.pe ?? r.draw) ?? 0}</td>
+                            <td className="py-2 pr-3">{(r.pp ?? r.loss) ?? 0}</td>
+                            <td className="py-2 pr-3">{r.gf ?? 0}</td>
+                            <td className="py-2 pr-3">{r.gc ?? 0}</td>
+                            <td className="py-2 pr-3 text-slate-600">
+                              {(r.gf ?? 0) - (r.gc ?? 0)}
+                            </td>
+                            <td className="py-2 pr-3 font-semibold">
+                              {r.pts ?? r.points ?? 0}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          </section>
-        </main>
+          </div>
+        </section>
+      </main>
 
-        <footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
-          Padel Round Robin by Velno – ABR
-        </footer>
+      <footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+        Padel Round Robin by Velno – ABR
+      </footer>
+    </div>
+  );
+}
+
+function TeamLabel({ team, nameOverride }: any) {
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <div className="flex -space-x-2">
+        {team.map((p: any) => (
+          <div
+            key={p.id}
+            title={p.name}
+            className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
+          >
+            {initials(p.name)}
+          </div>
+        ))}
       </div>
-    );
-  }
-
-  function TeamLabel({ team, nameOverride }: any) {
-    return (
-      <div className="flex items-center gap-2 py-1">
-        <div className="flex -space-x-2">
-          {team.map((p: any) => (
-            <div
-              key={p.id}
-              title={p.name}
-              className="w-6 h-6 rounded-full bg-slate-200 border border-white grid place-items-center text-[10px] font-medium"
-            >
-              {initials(p.name)}
-            </div>
-          ))}
-        </div>
-        <div className="text-sm">
-          {nameOverride || team.map((p: any) => p.name).join(" + ")}
-        </div>
+      <div className="text-sm">
+        {nameOverride || team.map((p: any) => p.name).join(" + ")}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  function initials(name: string) {
-    const parts = name.trim().split(/\s+/);
-    return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
-  }
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+}
 
-  function computeStandings(
-    mode: string,
-    schedule: any[],
-    players: any[],
-    teams: any[]
-  ) {
-    const table = new Map<string, any>();
+function computeStandings(
+  mode: string,
+  schedule: any[],
+  players: any[],
+  teams: any[]
+) {
+  const table = new Map<string, any>();
 
-    const addRow = (id: string, name: string) => {
-      if (!table.has(id))
-        table.set(id, {
-          id,
-          name,
-          pa: 0,
-          pj: 0,
-          pg: 0,
-          pe: 0,
-          pp: 0,
-          gf: 0,
-          gc: 0,
-          pts: 0,
-        });
-    };
-
-    if (mode === MODES.INDIVIDUAL) {
-      players.forEach((p) => addRow(p.id, p.name));
-    } else {
-      teams.forEach((t) => addRow(t.id, t.name));
-    }
-
-    // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
-    const assured = new Map<string, number>();
-
-    const incAssured = (id: string) => {
-      assured.set(id, (assured.get(id) || 0) + 1);
-    };
-
-    schedule.forEach((round: any) => {
-      const matches = mode === MODES.TEAMS ? round : round.matches;
-      (matches || []).forEach((m: any) => {
-        if (mode === MODES.INDIVIDUAL) {
-          // cada jugador tiene 1 partido asegurado por match
-          for (const p of m.teamA || []) incAssured(p.id);
-          for (const p of m.teamB || []) incAssured(p.id);
-        } else {
-          const teamAId = m.teamIdA || teamKey(m.teamA);
-          const teamBId = m.teamIdB || teamKey(m.teamB);
-          if (teamAId) incAssured(teamAId);
-          if (teamBId) incAssured(teamBId);
-        }
+  const addRow = (id: string, name: string) => {
+    if (!table.has(id))
+      table.set(id, {
+        id,
+        name,
+        pa: 0,
+        pj: 0,
+        pg: 0,
+        pe: 0,
+        pp: 0,
+        gf: 0,
+        gc: 0,
+        pts: 0,
       });
+  };
+
+  if (mode === MODES.INDIVIDUAL) {
+    players.forEach((p) => addRow(p.id, p.name));
+  } else {
+    teams.forEach((t) => addRow(t.id, t.name));
+  }
+
+  // ✅ PA = Partidos Asegurados (programados en el calendario, jugados o no)
+  const assured = new Map<string, number>();
+
+  const incAssured = (id: string) => {
+    assured.set(id, (assured.get(id) || 0) + 1);
+  };
+
+  schedule.forEach((round: any) => {
+    const matches = mode === MODES.TEAMS ? round : round.matches;
+    (matches || []).forEach((m: any) => {
+      if (mode === MODES.INDIVIDUAL) {
+        // cada jugador tiene 1 partido asegurado por match
+        for (const p of m.teamA || []) incAssured(p.id);
+        for (const p of m.teamB || []) incAssured(p.id);
+      } else {
+        const teamAId = m.teamIdA || teamKey(m.teamA);
+        const teamBId = m.teamIdB || teamKey(m.teamB);
+        if (teamAId) incAssured(teamAId);
+        if (teamBId) incAssured(teamBId);
+      }
     });
+  });
 
-    schedule.forEach((round: any) => {
-      const matches = mode === MODES.TEAMS ? round : round.matches;
-      (matches || []).forEach((m: any) => {
-        if (!m.played) return;
+  schedule.forEach((round: any) => {
+    const matches = mode === MODES.TEAMS ? round : round.matches;
+    (matches || []).forEach((m: any) => {
+      if (!m.played) return;
 
-        const aGF = m.scoreA || 0;
-        const bGF = m.scoreB || 0;
+      const aGF = m.scoreA || 0;
+      const bGF = m.scoreB || 0;
 
-        if (mode === MODES.INDIVIDUAL) {
-          for (const p of m.teamA) addRow(p.id, p.name);
-          for (const p of m.teamB) addRow(p.id, p.name);
-          for (const p of m.teamA) upd(table, p.id, aGF, bGF);
-          for (const p of m.teamB) upd(table, p.id, bGF, aGF);
-          if (aGF > bGF) {
-            for (const p of m.teamA) win(table, p.id);
-            for (const p of m.teamB) loss(table, p.id);
-          } else if (bGF > aGF) {
-            for (const p of m.teamB) win(table, p.id);
-            for (const p of m.teamA) loss(table, p.id);
-          } else {
-            for (const p of [...m.teamA, ...m.teamB]) draw(table, p.id);
-          }
+      if (mode === MODES.INDIVIDUAL) {
+        for (const p of m.teamA) addRow(p.id, p.name);
+        for (const p of m.teamB) addRow(p.id, p.name);
+        for (const p of m.teamA) upd(table, p.id, aGF, bGF);
+        for (const p of m.teamB) upd(table, p.id, bGF, aGF);
+        if (aGF > bGF) {
+          for (const p of m.teamA) win(table, p.id);
+          for (const p of m.teamB) loss(table, p.id);
+        } else if (bGF > aGF) {
+          for (const p of m.teamB) win(table, p.id);
+          for (const p of m.teamA) loss(table, p.id);
         } else {
-          const teamAId = m.teamIdA || teamKey(m.teamA);
-          const teamBId = m.teamIdB || teamKey(m.teamB);
-          const teamAName =
-            teams.find((t: any) => t.id === teamAId)?.name ||
-            m.teamA.map((p: any) => p.name).join(" + ");
-          const teamBName =
-            teams.find((t: any) => t.id === teamBId)?.name ||
-            m.teamB.map((p: any) => p.name).join(" + ");
-          addRow(teamAId, teamAName);
-          addRow(teamBId, teamBName);
-          upd(table, teamAId, aGF, bGF);
-          upd(table, teamBId, bGF, aGF);
-          if (aGF > bGF) {
-            win(table, teamAId);
-            loss(table, teamBId);
-          } else if (bGF > aGF) {
-            win(table, teamBId);
-            loss(table, teamAId);
-          } else {
-            draw(table, teamAId);
-            draw(table, teamBId);
-          }
+          for (const p of [...m.teamA, ...m.teamB]) draw(table, p.id);
         }
-      });
+      } else {
+        const teamAId = m.teamIdA || teamKey(m.teamA);
+        const teamBId = m.teamIdB || teamKey(m.teamB);
+        const teamAName =
+          teams.find((t: any) => t.id === teamAId)?.name ||
+          m.teamA.map((p: any) => p.name).join(" + ");
+        const teamBName =
+          teams.find((t: any) => t.id === teamBId)?.name ||
+          m.teamB.map((p: any) => p.name).join(" + ");
+        addRow(teamAId, teamAName);
+        addRow(teamBId, teamBName);
+        upd(table, teamAId, aGF, bGF);
+        upd(table, teamBId, bGF, aGF);
+        if (aGF > bGF) {
+          win(table, teamAId);
+          loss(table, teamBId);
+        } else if (bGF > aGF) {
+          win(table, teamBId);
+          loss(table, teamAId);
+        } else {
+          draw(table, teamAId);
+          draw(table, teamBId);
+        }
+      }
     });
+  });
 
-    // ✅ Asignar PA (Partidos Asegurados) a cada fila
-    table.forEach((row, id) => {
-      row.pa = assured.get(id) || 0;
-    });
+  // ✅ Asignar PA (Partidos Asegurados) a cada fila
+  table.forEach((row, id) => {
+    row.pa = assured.get(id) || 0;
+  });
 
-    return Array.from(table.values()).sort(
-      (x, y) =>
-        y.pts - x.pts ||
-        (y.gf - y.gc) - (x.gf - x.gc) ||
-        y.gf - x.gf
-    );
-  }
+  return Array.from(table.values()).sort(
+    (x, y) =>
+      y.pts - x.pts ||
+      (y.gf - y.gc) - (x.gf - x.gc) ||
+      y.gf - x.gf
+  );
+}
 
-  function teamKey(players: any[]) {
-    return players
-      .map((p) => p.id)
-      .sort()
-      .join("_");
-  }
-  function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
-    const r = table.get(id);
-    r.pj += 1;
-    r.gf += gf;
-    r.gc += gc;
-    table.set(id, r);
-  }
-  function win(table: Map<string, any>, id: string) {
-    const r = table.get(id);
-    r.pg += 1;
-    r.pts += 3;
-    table.set(id, r);
-  }
-  function draw(table: Map<string, any>, id: string) {
-    const r = table.get(id);
-    r.pe += 1;
-    r.pts += 1;
-    table.set(id, r);
-  }
-  function loss(table: Map<string, any>, id: string) {
-    const r = table.get(id);
-    r.pp += 1;
-    table.set(id, r);
-  }
+function teamKey(players: any[]) {
+  return players
+    .map((p) => p.id)
+    .sort()
+    .join("_");
+}
+function upd(table: Map<string, any>, id: string, gf: number, gc: number) {
+  const r = table.get(id);
+  r.pj += 1;
+  r.gf += gf;
+  r.gc += gc;
+  table.set(id, r);
+}
+function win(table: Map<string, any>, id: string) {
+  const r = table.get(id);
+  r.pg += 1;
+  r.pts += 3;
+  table.set(id, r);
+}
+function draw(table: Map<string, any>, id: string) {
+  const r = table.get(id);
+  r.pe += 1;
+  r.pts += 1;
+  table.set(id, r);
+}
+function loss(table: Map<string, any>, id: string) {
+  const r = table.get(id);
+  r.pp += 1;
+  table.set(id, r);
+}
