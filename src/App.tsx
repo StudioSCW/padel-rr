@@ -497,13 +497,13 @@ export default function App() {
         }
       }
 
-      // Mezclar para distribución más justa
-      const shuffledPairings = shuffleArray(allPairings);
-
       // Contador de partidos por equipo
       const gamesCount = new Map<string, number>(
         teams.map((t: any) => [t.id, 0])
       );
+
+      // Rastrear qué emparejamientos ya se usaron
+      const usedPairings = new Set<string>();
 
       const sched: any[] = [];
 
@@ -512,8 +512,14 @@ export default function App() {
         const roundMatches: any[] = [];
         const usedInRound = new Set<string>();
 
-        // Ordenar emparejamientos por prioridad (menos partidos jugados = mayor prioridad)
-        const sortedPairings = shuffledPairings.slice().sort((a, b) => {
+        // Ordenar emparejamientos disponibles por prioridad
+        // (priorizar equipos con menos partidos jugados)
+        const availablePairings = allPairings.filter(([teamA, teamB]) => {
+          const pairKey = [teamA.id, teamB.id].sort().join('-');
+          return !usedPairings.has(pairKey);
+        });
+
+        const sortedPairings = availablePairings.sort((a, b) => {
           const [teamA1, teamA2] = a;
           const [teamB1, teamB2] = b;
 
@@ -529,6 +535,8 @@ export default function App() {
 
           // Si alguno ya juega en esta ronda, saltar
           if (usedInRound.has(teamA.id) || usedInRound.has(teamB.id)) continue;
+
+          const pairKey = [teamA.id, teamB.id].sort().join('-');
 
           // Agregar el partido
           roundMatches.push({
@@ -548,6 +556,9 @@ export default function App() {
           usedInRound.add(teamA.id);
           usedInRound.add(teamB.id);
 
+          // Marcar este emparejamiento como usado
+          usedPairings.add(pairKey);
+
           // Incrementar contador de partidos
           gamesCount.set(teamA.id, (gamesCount.get(teamA.id) || 0) + 1);
           gamesCount.set(teamB.id, (gamesCount.get(teamB.id) || 0) + 1);
@@ -561,7 +572,6 @@ export default function App() {
       setTeamRoundIdx(0);
       return;
     }
-
     const { rounds: rr, history: h } = generateIndividualSchedule(
       players,
       rounds,
