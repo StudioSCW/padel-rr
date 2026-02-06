@@ -323,6 +323,8 @@ export default function App() {
   const [tournamentId, setTournamentId] = useState<string>(() => uid());
   const [teamPlan, setTeamPlan] = useState<any[] | null>(null);
   const [teamRoundIdx, setTeamRoundIdx] = useState<number>(0);
+  const [statsModalOpen, setStatsModalOpen] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const hasUnnamedTeams =
     mode === MODES.TEAMS &&
     teams.some((t: any) => !t.name || t.name.trim() === "");
@@ -850,6 +852,33 @@ export default function App() {
 
     alert("¡Nuevo torneo creado! ✅");
   }
+
+  function openStatsModal(playerId: string) {
+    setSelectedPlayerId(playerId);
+    setStatsModalOpen(true);
+  }
+
+  function closeStatsModal() {
+    setStatsModalOpen(false);
+    setSelectedPlayerId(null);
+  }
+
+  const selectedPlayerStats = useMemo(() => {
+    if (!selectedPlayerId || !statsModalOpen) return null;
+
+    return computeAdvancedStats(selectedPlayerId, mode, schedule, players, teams);
+  }, [selectedPlayerId, statsModalOpen, mode, schedule, players, teams]);
+
+  const selectedPlayerName = useMemo(() => {
+    if (!selectedPlayerId) return '';
+
+    if (mode === MODES.INDIVIDUAL) {
+      return players.find(p => p.id === selectedPlayerId)?.name || '';
+    } else {
+      return teams.find(t => t.id === selectedPlayerId)?.name || '';
+    }
+  }, [selectedPlayerId, mode, players, teams]);
+
   // ---------- UI ----------
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -1345,8 +1374,13 @@ export default function App() {
                           <tr key={r.id ?? r.name} className="border-t hover:bg-slate-50">
                             <td className="py-2 pr-3 text-slate-500">{i + 1}</td>
 
-                            <td className="py-2 pr-3 font-medium">
-                              {r.name ?? r.teamName ?? "—"}
+                            <td className="py-2 pr-3">
+                              <button
+                                onClick={() => openStatsModal(r.id)}
+                                className="font-medium text-left hover:text-indigo-600 hover:underline transition-colors"
+                              >
+                                {r.name ?? r.teamName ?? "—"}
+                              </button>
                             </td>
 
                             <td className="py-2 pr-3 text-slate-400 text-sm">{pa}</td>
@@ -1385,6 +1419,141 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        {/* Modal de Estadísticas Avanzadas */}
+        {statsModalOpen && selectedPlayerStats && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={closeStatsModal}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedPlayerName}</h3>
+                    <p className="text-sm text-slate-500">Estadísticas detalladas</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeStatsModal}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Rendimiento */}
+                <div>
+                  <h4 className="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                    💪 Rendimiento
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-slate-900">{selectedPlayerStats.winRate}%</div>
+                      <div className="text-xs text-slate-500">Efectividad</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-slate-900">
+                        {selectedPlayerStats.streak}{selectedPlayerStats.streakLabel}
+                        {selectedPlayerStats.streak >= 3 && selectedPlayerStats.streakLabel === 'V' && ' 🔥'}
+                      </div>
+                      <div className="text-xs text-slate-500">Racha actual</div>
+                    </div>
+                    <div className="bg-emerald-50 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-emerald-700">{selectedPlayerStats.avgGoalsFor}</div>
+                      <div className="text-xs text-emerald-600">Goles a favor/partido</div>
+                    </div>
+                    <div className="bg-red-50 rounded-xl p-3">
+                      <div className="text-2xl font-bold text-red-700">{selectedPlayerStats.avgGoalsAgainst}</div>
+                      <div className="text-xs text-red-600">Goles en contra/partido</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Récords */}
+                <div>
+                  <h4 className="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                    📈 Récords
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                      <span className="text-sm text-slate-600">Mejor victoria</span>
+                      <span className="font-semibold text-emerald-600">+{selectedPlayerStats.bestWin} goles</span>
+                    </div>
+                    {selectedPlayerStats.worstLoss > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                        <span className="text-sm text-slate-600">Peor derrota</span>
+                        <span className="font-semibold text-red-600">-{selectedPlayerStats.worstLoss} goles</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                      <span className="text-sm text-slate-600">Partidos de alto scoring</span>
+                      <span className="font-semibold text-slate-900">
+                        {selectedPlayerStats.highScoring}/{selectedPlayerStats.played}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compañeros y rivales (solo en modo INDIVIDUAL) */}
+                {mode === MODES.INDIVIDUAL && (selectedPlayerStats.frequentTeammate || selectedPlayerStats.frequentOpponent) && (
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                      🎯 Conexiones
+                    </h4>
+                    <div className="space-y-2">
+                      {selectedPlayerStats.frequentTeammate && (
+                        <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl">
+                          <span className="text-sm text-slate-600">Compañero frecuente</span>
+                          <span className="font-semibold text-indigo-700">
+                            {selectedPlayerStats.frequentTeammate.name} ({selectedPlayerStats.frequentTeammate.count}x)
+                          </span>
+                        </div>
+                      )}
+                      {selectedPlayerStats.frequentOpponent && (
+                        <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
+                          <span className="text-sm text-slate-600">Rival frecuente</span>
+                          <span className="font-semibold text-amber-700">
+                            {selectedPlayerStats.frequentOpponent.name} ({selectedPlayerStats.frequentOpponent.count}x)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resumen */}
+                <div className="pt-4 border-t">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-emerald-600">{selectedPlayerStats.wins}</div>
+                      <div className="text-xs text-slate-500">Victorias</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-slate-600">{selectedPlayerStats.draws}</div>
+                      <div className="text-xs text-slate-500">Empates</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-red-600">{selectedPlayerStats.losses}</div>
+                      <div className="text-xs text-slate-500">Derrotas</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="max-w-6xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
@@ -1418,6 +1587,171 @@ function TeamLabel({ team, nameOverride }: any) {
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
   return (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+}
+
+// ---------- ESTADÍSTICAS AVANZADAS ----------
+function computeAdvancedStats(
+  playerId: string,
+  mode: string,
+  schedule: any[],
+  players: any[],
+  teams: any[]
+) {
+  const matches: any[] = [];
+
+  // Recopilar todos los partidos del jugador/equipo
+  schedule.forEach((round: any) => {
+    const roundMatches = mode === MODES.TEAMS ? round : round.matches;
+    (roundMatches || []).forEach((m: any) => {
+      if (!m.played) return;
+
+      let isInMatch = false;
+      let playerTeam: 'A' | 'B' | null = null;
+
+      if (mode === MODES.INDIVIDUAL) {
+        if (m.teamA?.some((p: any) => p.id === playerId)) {
+          isInMatch = true;
+          playerTeam = 'A';
+        } else if (m.teamB?.some((p: any) => p.id === playerId)) {
+          isInMatch = true;
+          playerTeam = 'B';
+        }
+      } else {
+        const teamIdA = m.teamIdA || teamKey(m.teamA);
+        const teamIdB = m.teamIdB || teamKey(m.teamB);
+        if (teamIdA === playerId) {
+          isInMatch = true;
+          playerTeam = 'A';
+        } else if (teamIdB === playerId) {
+          isInMatch = true;
+          playerTeam = 'B';
+        }
+      }
+
+      if (isInMatch && playerTeam) {
+        matches.push({
+          scoreFor: playerTeam === 'A' ? m.scoreA : m.scoreB,
+          scoreAgainst: playerTeam === 'A' ? m.scoreB : m.scoreA,
+          teammates: playerTeam === 'A' ? m.teamA : m.teamB,
+          opponents: playerTeam === 'A' ? m.teamB : m.teamA,
+        });
+      }
+    });
+  });
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  // Calcular estadísticas
+  const played = matches.length;
+  const wins = matches.filter(m => m.scoreFor > m.scoreAgainst).length;
+  const draws = matches.filter(m => m.scoreFor === m.scoreAgainst).length;
+  const losses = matches.filter(m => m.scoreFor < m.scoreAgainst).length;
+
+  const totalGoalsFor = matches.reduce((sum, m) => sum + m.scoreFor, 0);
+  const totalGoalsAgainst = matches.reduce((sum, m) => sum + m.scoreAgainst, 0);
+
+  const avgGoalsFor = played > 0 ? (totalGoalsFor / played).toFixed(1) : '0.0';
+  const avgGoalsAgainst = played > 0 ? (totalGoalsAgainst / played).toFixed(1) : '0.0';
+  const winRate = played > 0 ? ((wins / played) * 100).toFixed(0) : '0';
+
+  // Mejor victoria y peor derrota
+  const victorias = matches.filter(m => m.scoreFor > m.scoreAgainst);
+  const derrotas = matches.filter(m => m.scoreFor < m.scoreAgainst);
+
+  const bestWin = victorias.length > 0
+    ? Math.max(...victorias.map(m => m.scoreFor - m.scoreAgainst))
+    : 0;
+
+  const worstLoss = derrotas.length > 0
+    ? Math.max(...derrotas.map(m => m.scoreAgainst - m.scoreFor))
+    : 0;
+
+  // Partidos de alto scoring (6+ goles totales)
+  const highScoring = matches.filter(m => (m.scoreFor + m.scoreAgainst) >= 6).length;
+
+  // Racha actual
+  let streak = 0;
+  let streakType: 'W' | 'D' | 'L' = 'W';
+
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const m = matches[i];
+    const result = m.scoreFor > m.scoreAgainst ? 'W' : m.scoreFor < m.scoreAgainst ? 'L' : 'D';
+
+    if (streak === 0) {
+      streakType = result;
+      streak = 1;
+    } else if (result === streakType) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  const streakLabel = streakType === 'W' ? 'V' : streakType === 'D' ? 'E' : 'D';
+
+  // Compañeros y rivales frecuentes (solo en modo INDIVIDUAL)
+  let frequentTeammate = null;
+  let frequentOpponent = null;
+
+  if (mode === MODES.INDIVIDUAL) {
+    const teammateCount: Record<string, number> = {};
+    const opponentCount: Record<string, number> = {};
+
+    matches.forEach(m => {
+      // Compañeros
+      m.teammates?.forEach((p: any) => {
+        if (p.id !== playerId) {
+          teammateCount[p.id] = (teammateCount[p.id] || 0) + 1;
+        }
+      });
+
+      // Rivales
+      m.opponents?.forEach((p: any) => {
+        opponentCount[p.id] = (opponentCount[p.id] || 0) + 1;
+      });
+    });
+
+    if (Object.keys(teammateCount).length > 0) {
+      const topTeammateId = Object.keys(teammateCount).reduce((a, b) =>
+        teammateCount[a] > teammateCount[b] ? a : b
+      );
+      const topTeammate = players.find((p: any) => p.id === topTeammateId);
+      frequentTeammate = {
+        name: topTeammate?.name || 'Desconocido',
+        count: teammateCount[topTeammateId]
+      };
+    }
+
+    if (Object.keys(opponentCount).length > 0) {
+      const topOpponentId = Object.keys(opponentCount).reduce((a, b) =>
+        opponentCount[a] > opponentCount[b] ? a : b
+      );
+      const topOpponent = players.find((p: any) => p.id === topOpponentId);
+      frequentOpponent = {
+        name: topOpponent?.name || 'Desconocido',
+        count: opponentCount[topOpponentId]
+      };
+    }
+  }
+
+  return {
+    played,
+    wins,
+    draws,
+    losses,
+    winRate,
+    avgGoalsFor,
+    avgGoalsAgainst,
+    bestWin,
+    worstLoss,
+    highScoring,
+    streak,
+    streakLabel,
+    frequentTeammate,
+    frequentOpponent,
+  };
 }
 
 function computeStandings(
