@@ -10,8 +10,6 @@ import {
   PlayCircle,
   CalendarIcon,
 } from "lucide-react";
-import { round } from "firebase/firestore/pipelines";
-
 
 /**
  * Padel Round Robin
@@ -695,7 +693,7 @@ export default function App() {
     if (mode === MODES.INDIVIDUAL) {
       const { rounds: rr, history: h } = generateIndividualSchedule(
         players,
-        rounds,
+        1,
         courts,
         history
       );
