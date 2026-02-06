@@ -10,6 +10,7 @@ import {
   PlayCircle,
   CalendarIcon,
 } from "lucide-react";
+import { round } from "firebase/firestore/pipelines";
 
 
 /**
@@ -694,7 +695,7 @@ export default function App() {
     if (mode === MODES.INDIVIDUAL) {
       const { rounds: rr, history: h } = generateIndividualSchedule(
         players,
-        1,
+        rounds,
         courts,
         history
       );
